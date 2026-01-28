@@ -5,8 +5,10 @@ import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
 import { Mail, ArrowRight } from 'lucide-react';
 
-const ALLOWED_EMAIL =
-  process.env.NEXT_PUBLIC_ALLOWED_EMAIL ?? 'your-email@gmail.com';
+const ALLOWED_EMAILS =
+  process.env.NEXT_PUBLIC_ALLOWED_EMAILS ??
+  process.env.NEXT_PUBLIC_ALLOWED_EMAIL ??
+  'your-email@gmail.com';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,7 +30,11 @@ export default function LoginPage() {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail !== ALLOWED_EMAIL.toLowerCase()) {
+    const allowedList = ALLOWED_EMAILS.split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (!allowedList.includes(normalizedEmail)) {
       setError('Access Denied');
       return;
     }
@@ -95,7 +101,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={ALLOWED_EMAIL}
+                  placeholder={ALLOWED_EMAILS}
                   className="flex-1 bg-transparent text-xs text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
                   autoComplete="email"
                   required
