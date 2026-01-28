@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { Brain, Search, Sparkles } from 'lucide-react';
+import { Brain, LogOut, Search, Sparkles } from 'lucide-react';
 
 type Note = {
   id: string;
@@ -33,6 +34,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -133,6 +135,28 @@ export default function HomePage() {
   const listToRender =
     searchQuery.trim().length > 0 ? searchResults : notes;
 
+  const handleLogout = async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !anonKey) {
+      console.error('Supabase env missing');
+      window.location.href = '/login';
+      return;
+    }
+
+    setIsLoggingOut(true);
+    try {
+      const supabase = createBrowserClient(url, anonKey);
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Logout error', e);
+    } finally {
+      setIsLoggingOut(false);
+      window.location.href = '/login';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-neutral-100 flex flex-col relative overflow-hidden">
       {/* 背景光晕 */}
@@ -144,45 +168,58 @@ export default function HomePage() {
       {/* 顶部导航 + 搜索 */}
       <header className="border-b border-neutral-900/80 backdrop-blur-sm sticky top-0 z-20 bg-black/70">
         <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between gap-6">
-          <motion.div
-            whileHover={{ y: -2, scale: 1.01 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="flex items-center gap-3 cursor-default"
-          >
-            <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
-              <Brain className="h-5 w-5 text-neutral-200" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-neutral-400">
-                Second Brain
-              </span>
-              <span className="text-xs text-neutral-600">
-                Capture insights. Crystallize models. Design identity.
-              </span>
-            </div>
-          </motion.div>
-
-          <form
-            onSubmit={handleSearch}
-            className="flex-1 max-w-md hidden md:flex items-center gap-2"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="语义搜索：例如 “关于赚钱的焦虑”"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:bg-neutral-900 transition-colors"
-              disabled={isSearching}
+          <div className="flex items-center gap-4 flex-1 justify-end md:justify-between">
+            <motion.div
+              whileHover={{ y: -2, scale: 1.01 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              className="flex items-center gap-3 cursor-default"
             >
-              {isSearching ? '检索中…' : '搜索'}
-            </button>
-          </form>
+              <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
+                <Brain className="h-5 w-5 text-neutral-200" />
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-neutral-400">
+                  Second Brain
+                </span>
+                <span className="text-xs text-neutral-600">
+                  Capture insights. Crystallize models. Design identity.
+                </span>
+              </div>
+            </motion.div>
+
+            <div className="flex items-center gap-3">
+              <form
+                onSubmit={handleSearch}
+                className="hidden md:flex items-center gap-2"
+              >
+                <div className="relative w-60">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="语义搜索你的想法"
+                    className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:bg-neutral-900 transition-colors"
+                  disabled={isSearching}
+                >
+                  {isSearching ? '检索中…' : '搜索'}
+                </button>
+              </form>
+
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 px-3 py-1.5 text-[11px] text-neutral-300 hover:bg-neutral-900 transition-colors disabled:opacity-40"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{isLoggingOut ? '正在退出…' : 'Logout'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
