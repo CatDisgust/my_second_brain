@@ -134,23 +134,33 @@ export default function HomePage() {
     searchQuery.trim().length > 0 ? searchResults : notes;
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex flex-col">
+    <div className="min-h-screen bg-black text-neutral-100 flex flex-col relative overflow-hidden">
+      {/* 背景光晕 */}
+      <div className="pointer-events-none absolute inset-0 opacity-40">
+        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.18),_transparent_60%)]" />
+        <div className="absolute bottom-[-120px] right-[-40px] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom,_rgba(255,255,255,0.08),_transparent_60%)]" />
+      </div>
+
       {/* 顶部导航 + 搜索 */}
       <header className="border-b border-neutral-900/80 backdrop-blur-sm sticky top-0 z-20 bg-black/70">
-        <div className="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center">
+        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between gap-6">
+          <motion.div
+            whileHover={{ y: -2, scale: 1.01 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="flex items-center gap-3 cursor-default"
+          >
+            <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
               <Brain className="h-5 w-5 text-neutral-200" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium tracking-wide text-neutral-200">
+              <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-neutral-400">
                 Second Brain
               </span>
-              <span className="text-xs text-neutral-500">
-                Internalize. Index. Retrieve.
+              <span className="text-xs text-neutral-600">
+                Capture insights. Crystallize models. Design identity.
               </span>
             </div>
-          </div>
+          </motion.div>
 
           <form
             onSubmit={handleSearch}
@@ -178,13 +188,13 @@ export default function HomePage() {
 
       {/* 主体 */}
       <main className="flex-1">
-        <div className="mx-auto max-w-3xl px-6 pt-10 pb-16 space-y-10">
+        <div className="mx-auto max-w-4xl px-6 pt-12 pb-20 space-y-12">
           {/* 中央输入卡片 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="rounded-3xl border border-neutral-900 bg-gradient-to-b from-neutral-950 to-black/60 px-6 py-5 shadow-[0_0_80px_rgba(0,0,0,0.9)]"
+            className="rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-neutral-950/90 to-black/70 px-6 py-6 shadow-[0_24px_80px_rgba(15,23,42,0.85)]"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -203,8 +213,10 @@ export default function HomePage() {
             </div>
 
             <div
-              className={`relative rounded-2xl bg-black/0 transition-all duration-300 ${
-                isLoading ? 'backdrop-blur-[2px] bg-black/10' : ''
+              className={`relative rounded-2xl border border-neutral-800/80 bg-neutral-950/60 px-4 py-3 transition-all duration-300 ${
+                isLoading
+                  ? 'backdrop-blur-[3px] border-neutral-700 bg-neutral-950/80'
+                  : ''
               }`}
             >
               <textarea
@@ -212,7 +224,7 @@ export default function HomePage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="写下你刚刚的顿悟、感想或痛点。比如：我意识到自己在赚钱这件事上总是出于恐惧，而不是创造价值的兴趣……"
-                className="w-full resize-none bg-transparent text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none leading-relaxed"
+                className="w-full resize-none bg-transparent text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none leading-relaxed max-w-2xl"
                 rows={3}
                 disabled={isLoading}
               />
@@ -312,7 +324,7 @@ export default function HomePage() {
           </form>
 
           {/* 列表 / 搜索结果 */}
-          <section className="space-y-3">
+          <section className="space-y-4">
             <div className="flex items-center justify-between text-xs text-neutral-500">
               <span>
                 {searchQuery.trim()
@@ -339,10 +351,10 @@ export default function HomePage() {
               {listToRender.map((note) => (
                 <motion.article
                   key={note.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                  className="rounded-2xl border border-neutral-900 bg-neutral-950/40 px-4 py-3"
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.28, ease: 'easeOut' }}
+                  className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
                 >
                   <div className="flex items-center justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
