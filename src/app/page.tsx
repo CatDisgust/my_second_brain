@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -8,6 +9,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from '@/components/ui/stagger-list';
+import { NoteCard, type Note } from '@/components/note-card';
 
 // 隐藏横向滚动条（Entropy Reduction View）
 // 这里用内联全局样式避免引入额外依赖/配置
@@ -16,16 +18,7 @@ const noScrollbarCss = `
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 `;
 
-type Note = {
-  id: string;
-  content: string;
-  category: string | null;
-  tags: string[] | null;
-  summary: string | null;
-  mental_model: string | null;
-  created_at: string;
-  similarity?: number;
-};
+// Note 类型从通用 NoteCard 中导入
 
 const CORE_MENTAL_MODELS = [
   '基本事实',
@@ -303,7 +296,8 @@ export default function HomePage() {
                       onClick={() => {
                         setActiveModel(model);
                         setSearchQuery(model);
-                        runSearch(model, 'tag');
+                        // 与 /brain 一致，使用 Hybrid Search，保证有结果
+                        runSearch(model, 'hybrid');
                       }}
                       className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
                         activeModel === model
@@ -511,7 +505,8 @@ export default function HomePage() {
                 onClick={() => {
                   setActiveModel(model);
                   setSearchQuery(model);
-                  runSearch(model, 'tag');
+                  // 与桌面端一致，使用 Hybrid Search
+                  runSearch(model, 'hybrid');
                 }}
                 className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
                   activeModel === model
@@ -568,61 +563,10 @@ export default function HomePage() {
                 >
                   {listToRender.map((note) => (
                     <StaggerItem key={note.id}>
-                      <motion.article
-                        className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
-                      >
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2">
-                        {note.category && (
-                          <span className="inline-flex items-center rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-300">
-                            {note.category}
-                          </span>
-                        )}
-                        {typeof note.similarity === 'number' && (
-                          <span className="text-[10px] text-neutral-600">
-                            相似度 {note.similarity.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-neutral-600">
-                        {new Date(note.created_at).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-neutral-300 leading-relaxed mb-2 whitespace-pre-wrap">
-                      {note.content}
-                    </p>
-
-                    {note.summary && (
-                      <p className="text-[11px] text-neutral-400 leading-relaxed mb-2">
-                        {note.summary}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-2 justify-between">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {note.mental_model && (
-                          <span className="text-[11px] text-neutral-500">
-                            心智模型：{note.mental_model}
-                          </span>
-                        )}
-
-                        {note.tags && note.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {note.tags.map((tag) => (
-                              <span
-                                key={tag}
-                                className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-400"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={async () => {
+                      <NoteCard
+                        note={note}
+                        deleting={deletingId === note.id}
+                        onDelete={async () => {
                           // 乐观更新：先从列表中移除，再与后端同步
                           if (deletingId) return;
                           setDeletingId(note.id);
@@ -648,24 +592,28 @@ export default function HomePage() {
                             }
                           } catch (e) {
                             console.error(e);
-                            // 简单提示用户出错，数据可以通过刷新重新同步
                             alert('删除失败，请刷新页面后重试。');
                           } finally {
                             setDeletingId(null);
                           }
                         }}
-                        disabled={deletingId === note.id}
-                        className="text-[10px] px-2 py-1 rounded-full border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors disabled:opacity-40"
-                      >
-                        {deletingId === note.id ? '删除中…' : '删除'}
-                      </button>
-                    </div>
-                      </motion.article>
+                      />
                     </StaggerItem>
                   ))}
                 </StaggerContainer>
               )}
             </div>
+            {/* 视觉暗示：进入第二大脑（完整视图） */}
+            {!searchQuery.trim() && !isLoadingNotes && listToRender.length > 0 && (
+              <div className="pt-2 flex justify-end">
+                <Link
+                  href="/brain"
+                  className="text-[11px] text-neutral-500 hover:text-neutral-200 hover:translate-x-0.5 transition-all"
+                >
+                  进入第二大脑 (View Full Brain) -&gt;
+                </Link>
+              </div>
+            )}
           </section>
         </div>
       </main>

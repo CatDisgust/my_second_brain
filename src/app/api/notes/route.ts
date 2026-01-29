@@ -52,14 +52,21 @@ export async function POST(request: Request) {
   }
 }
 
-// 获取最近的笔记列表（用于首页展示）
-export async function GET() {
+// 获取笔记列表
+// - 默认：返回最近 5 条（用于首页轻量展示）
+// - 可通过 ?limit=100 调整数量（用于 /brain 等整理视图）
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get('limit');
+    const parsed = limitParam ? Number.parseInt(limitParam, 10) : Number.NaN;
+    const limit = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 500) : 5;
+
     const { data, error } = await supabaseAdmin
       .from('notes')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(limit);
 
     if (error) {
       console.error('Supabase list notes error:', error);
