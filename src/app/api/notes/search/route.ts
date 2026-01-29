@@ -45,30 +45,80 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') ?? '';
+    const mode = searchParams.get('mode') ?? 'hybrid';
 
     if (!query.trim()) {
       return NextResponse.json({ notes: [] });
     }
 
-    // 1. 将查询语句转为 embedding
-    const queryEmbedding = await embedText(query);
+    // 精准标签搜索：确定性过滤
+    if (mode === 'tag') {
+      const tag = query.trim();
+      const { data, error } = await supabaseAdmin
+        .from('notes')
+        .select('*')
+        .contains('tags', [tag])
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-    // 2. 调用数据库侧的相似度检索函数
-    const { data, error } = await supabaseAdmin.rpc('match_notes', {
-      query_embedding: queryEmbedding,
-      match_threshold: 0.6, // 越高越严格
-      match_count: 10,
-    });
+      if (error) {
+        console.error('Supabase tag search error:', error);
+        return NextResponse.json(
+          { error: 'Failed to search notes' },
+          { status: 500 },
+        );
+      }
 
-    if (error) {
-      console.error('Supabase match_notes error:', error);
-      return NextResponse.json(
-        { error: 'Failed to search notes' },
-        { status: 500 },
-      );
+      return NextResponse.json({
+        notes: (data ?? []).map((n: any) => ({ ...n, similarity: 1.0 })),
+      });
     }
 
-    return NextResponse.json({ notes: data ?? [] });
+    try {
+      // 1) embedding
+      const queryEmbedding = await embedText(query);
+
+      // 2) 混合检索：标签完全匹配 -> similarity=1.0；否则使用向量距离
+      // 需要你在 Supabase 中把 match_notes 升级为带 query_text 参数的版本（我会提供 SQL）
+      const { data, error } = await supabaseAdmin.rpc('match_notes', {
+        query_text: query,
+        query_embedding: queryEmbedding,
+        match_threshold: 0.6,
+        match_count: 10,
+      });
+
+      if (error) {
+        console.error('Supabase match_notes error:', error);
+        throw error;
+      }
+
+      return NextResponse.json({ notes: data ?? [] });
+    } catch (vectorError) {
+      console.error(
+        'Vector search failed, falling back to keyword search:',
+        vectorError,
+      );
+
+      // 回退策略：使用内容和摘要的模糊匹配，避免整个搜索失败
+      const { data, error } = await supabaseAdmin
+        .from('notes')
+        .select('*')
+        .or(
+          `content.ilike.%${query}%,summary.ilike.%${query}%,mental_model.ilike.%${query}%`,
+        )
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Supabase fallback search error:', error);
+        return NextResponse.json(
+          { error: 'Failed to search notes' },
+          { status: 500 },
+        );
+      }
+
+      return NextResponse.json({ notes: data ?? [] });
+    }
   } catch (error) {
     console.error('GET /api/notes/search error:', error);
     return NextResponse.json(

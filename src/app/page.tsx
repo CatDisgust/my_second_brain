@@ -2,8 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, LogOut, Search, Sparkles } from 'lucide-react';
+
+// 隐藏横向滚动条（Entropy Reduction View）
+// 这里用内联全局样式避免引入额外依赖/配置
+const noScrollbarCss = `
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+`;
 
 type Note = {
   id: string;
@@ -15,6 +22,15 @@ type Note = {
   created_at: string;
   similarity?: number;
 };
+
+const CORE_MENTAL_MODELS = [
+  '基本事实',
+  '精神熵',
+  '认知重构',
+  '杠杆效应',
+  '关键动能',
+  '一人公司',
+] as const;
 
 const LOADING_MESSAGES = [
   'AI 正在重构你的思维…',
@@ -35,6 +51,8 @@ export default function HomePage() {
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeModel, setActiveModel] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -62,6 +80,7 @@ export default function HomePage() {
     loadNotes();
   }, []);
 
+
   const handleSubmit = async () => {
     if (!content.trim()) return;
     setIsLoading(true);
@@ -87,7 +106,7 @@ export default function HomePage() {
       if (data.note) {
         setNotes((prev) => [data.note, ...prev]);
       }
-      setSuccessMessage('✅ 思想已入库');
+      setSuccessMessage('已内化');
       // 短暂保留提示，再清空输入
       setTimeout(() => {
         setSuccessMessage(null);
@@ -102,10 +121,11 @@ export default function HomePage() {
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
+  const runSearch = async (q: string, mode?: 'hybrid' | 'tag') => {
+    const query = q.trim();
+    if (!query) {
       setSearchResults([]);
+      setActiveModel(null);
       return;
     }
 
@@ -113,7 +133,8 @@ export default function HomePage() {
     setError(null);
 
     try {
-      const params = new URLSearchParams({ q: searchQuery });
+      const params = new URLSearchParams({ q: query });
+      if (mode) params.set('mode', mode);
       const res = await fetch(`/api/notes/search?${params.toString()}`);
       const data = await res.json();
 
@@ -130,6 +151,12 @@ export default function HomePage() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActiveModel(null);
+    await runSearch(searchQuery, 'hybrid');
   };
 
   const listToRender =
@@ -159,6 +186,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-black text-neutral-100 flex flex-col relative overflow-hidden">
+      <style>{noScrollbarCss}</style>
       {/* 背景光晕 */}
       <div className="pointer-events-none absolute inset-0 opacity-40">
         <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.18),_transparent_60%)]" />
@@ -190,9 +218,10 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <form
                 onSubmit={handleSearch}
-                className="hidden md:flex items-center gap-2"
+                className="hidden md:flex flex-col gap-2 items-stretch"
               >
-                <div className="relative w-60">
+                <div className="flex items-center gap-2">
+                  <div className="relative w-60">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
                   <input
                     value={searchQuery}
@@ -208,6 +237,44 @@ export default function HomePage() {
                 >
                   {isSearching ? '检索中…' : '搜索'}
                 </button>
+                </div>
+
+                {/* 核心思维模型胶囊栏 */}
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveModel(null);
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }}
+                    className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                      activeModel === null && !searchQuery.trim()
+                        ? 'bg-neutral-100 text-black border-neutral-300'
+                        : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+                    }`}
+                  >
+                    全部
+                  </button>
+                  {CORE_MENTAL_MODELS.map((model) => (
+                    <button
+                      key={model}
+                      type="button"
+                      onClick={() => {
+                        setActiveModel(model);
+                        setSearchQuery(model);
+                        runSearch(model, 'tag');
+                      }}
+                      className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                        activeModel === model
+                          ? 'bg-neutral-100 text-black border-neutral-300'
+                          : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+                      }`}
+                    >
+                      {model}
+                    </button>
+                  ))}
+                </div>
               </form>
 
               <button
@@ -303,15 +370,18 @@ export default function HomePage() {
             )}
 
             {successMessage && !loadingMessage && (
-              <motion.p
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.2 }}
-                className="mt-3 text-[11px] text-emerald-400"
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-neutral-900/60 border border-neutral-800/50 px-3 py-1.5"
               >
-                {successMessage}
-              </motion.p>
+                <div className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-pulse" />
+                <span className="text-[11px] font-medium tracking-wide text-neutral-300">
+                  {successMessage}
+                </span>
+              </motion.div>
             )}
 
             {error && (
@@ -360,6 +430,43 @@ export default function HomePage() {
             </button>
           </form>
 
+          {/* 移动端核心思维模型胶囊栏 */}
+          <div className="md:hidden -mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveModel(null);
+                setSearchQuery('');
+                setSearchResults([]);
+              }}
+              className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                activeModel === null && !searchQuery.trim()
+                  ? 'bg-neutral-100 text-black border-neutral-300'
+                  : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+              }`}
+            >
+              全部
+            </button>
+            {CORE_MENTAL_MODELS.map((model) => (
+              <button
+                key={model}
+                type="button"
+                onClick={() => {
+                  setActiveModel(model);
+                  setSearchQuery(model);
+                  runSearch(model, 'tag');
+                }}
+                className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                  activeModel === model
+                    ? 'bg-neutral-100 text-black border-neutral-300'
+                    : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+                }`}
+              >
+                {model}
+              </button>
+            ))}
+          </div>
+
           {/* 列表 / 搜索结果 */}
           <section className="space-y-4">
             <div className="flex items-center justify-between text-xs text-neutral-500">
@@ -385,64 +492,108 @@ export default function HomePage() {
                 </p>
               )}
 
-              {listToRender.map((note) => (
-                <motion.article
-                  key={note.id}
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
-                >
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2">
-                      {note.category && (
-                        <span className="inline-flex items-center rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-300">
-                          {note.category}
-                        </span>
-                      )}
-                      {typeof note.similarity === 'number' && (
-                        <span className="text-[10px] text-neutral-600">
-                          相似度 {note.similarity.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-neutral-600">
-                      {new Date(note.created_at).toLocaleString()}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-neutral-300 leading-relaxed mb-2 whitespace-pre-wrap">
-                    {note.content}
-                  </p>
-
-                  {note.summary && (
-                    <p className="text-[11px] text-neutral-400 leading-relaxed mb-2">
-                      {note.summary}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-2 justify-between">
-                    {note.mental_model && (
-                      <span className="text-[11px] text-neutral-500">
-                        心智模型：{note.mental_model}
-                      </span>
-                    )}
-
-                    {note.tags && note.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {note.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-400"
-                          >
-                            {tag}
+              <AnimatePresence initial={false}>
+                {listToRender.map((note) => (
+                  <motion.article
+                    key={note.id}
+                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        {note.category && (
+                          <span className="inline-flex items-center rounded-full bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-300">
+                            {note.category}
                           </span>
-                        ))}
+                        )}
+                        {typeof note.similarity === 'number' && (
+                          <span className="text-[10px] text-neutral-600">
+                            相似度 {note.similarity.toFixed(2)}
+                          </span>
+                        )}
                       </div>
+                      <span className="text-[10px] text-neutral-600">
+                        {new Date(note.created_at).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-neutral-300 leading-relaxed mb-2 whitespace-pre-wrap">
+                      {note.content}
+                    </p>
+
+                    {note.summary && (
+                      <p className="text-[11px] text-neutral-400 leading-relaxed mb-2">
+                        {note.summary}
+                      </p>
                     )}
-                  </div>
-                </motion.article>
-              ))}
+
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {note.mental_model && (
+                          <span className="text-[11px] text-neutral-500">
+                            心智模型：{note.mental_model}
+                          </span>
+                        )}
+
+                        {note.tags && note.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {note.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-900 text-neutral-400"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          // 乐观更新：先从列表中移除，再与后端同步
+                          if (deletingId) return;
+                          setDeletingId(note.id);
+                          setNotes((prev) =>
+                            prev.filter((n) => n.id !== note.id),
+                          );
+                          setSearchResults((prev) =>
+                            prev.filter((n) => n.id !== note.id),
+                          );
+
+                          try {
+                            const res = await fetch(
+                              `/api/notes?id=${note.id}`,
+                              {
+                                method: 'DELETE',
+                              },
+                            );
+                            const data = await res.json();
+                            if (!res.ok || !data.ok) {
+                              throw new Error(
+                                data.error || 'Failed to delete',
+                              );
+                            }
+                          } catch (e) {
+                            console.error(e);
+                            // 简单提示用户出错，数据可以通过刷新重新同步
+                            alert('删除失败，请刷新页面后重试。');
+                          } finally {
+                            setDeletingId(null);
+                          }
+                        }}
+                        disabled={deletingId === note.id}
+                        className="text-[10px] px-2 py-1 rounded-full border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors disabled:opacity-40"
+                      >
+                        {deletingId === note.id ? '删除中…' : '删除'}
+                      </button>
+                    </div>
+                  </motion.article>
+                ))}
+              </AnimatePresence>
             </div>
           </section>
         </div>

@@ -79,3 +79,39 @@ export async function GET() {
   }
 }
 
+// 删除指定笔记
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing id' },
+        { status: 400 },
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .from('notes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Supabase delete note error:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete note' },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('DELETE /api/notes error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
+    );
+  }
+}
+
