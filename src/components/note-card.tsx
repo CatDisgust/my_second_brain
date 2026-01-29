@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 export type Note = {
-  id: string;
+  id: string | number;
   content: string;
   category: string | null;
   tags: string[] | null;
@@ -9,6 +9,7 @@ export type Note = {
   mental_model: string | null;
   created_at: string;
   similarity?: number;
+  match_type?: 'tag' | 'keyword' | 'vector' | string;
 };
 
 export type NoteCardProps = {
@@ -18,6 +19,13 @@ export type NoteCardProps = {
 };
 
 export function NoteCard({ note, onDelete, deleting }: NoteCardProps) {
+  const matchBadge =
+    note.match_type === 'vector'
+      ? { label: 'Semantic', className: 'bg-neutral-900 text-sky-300/80' }
+      : note.match_type === 'tag' || note.match_type === 'keyword'
+        ? { label: 'Exact', className: 'bg-neutral-900 text-emerald-300/80' }
+        : null;
+
   return (
     <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-3 mb-3">
@@ -28,8 +36,17 @@ export function NoteCard({ note, onDelete, deleting }: NoteCardProps) {
             </span>
           )}
           {typeof note.similarity === 'number' && (
-            <span className="text-[13px] text-gray-500">
-              相似度 {note.similarity.toFixed(2)}
+            <span className="inline-flex items-center gap-2">
+              <span className="text-[13px] text-gray-500">
+                相似度 {note.similarity.toFixed(2)}
+              </span>
+              {matchBadge && (
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] ${matchBadge.className}`}
+                >
+                  {matchBadge.label}
+                </span>
+              )}
             </span>
           )}
         </div>

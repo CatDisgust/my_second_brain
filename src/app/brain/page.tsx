@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import {
   StaggerContainer,
   StaggerItem,
 } from '@/components/ui/stagger-list';
 import { NoteCard, type Note } from '@/components/note-card';
+import { SearchSkeleton } from '@/components/search-skeleton';
+import { useDebounce } from '@/hooks/use-debounce';
 
 const CORE_MENTAL_MODELS = [
   '基本事实',
@@ -17,10 +19,108 @@ const CORE_MENTAL_MODELS = [
   '一人公司',
 ] as const;
 
+export interface SearchResult {
+  id: number | string;
+  content: string;
+  tags: string[];
+  similarity: number;
+  match_type: 'tag' | 'keyword' | 'vector';
+  created_at: string;
+}
+
+function asSearchResults(input: unknown): SearchResult[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((raw: any) => {
+      const id = raw?.id;
+      const content = raw?.content;
+      const created_at = raw?.created_at;
+      const similarity = raw?.similarity;
+      const match_type = raw?.match_type;
+      const tags = raw?.tags;
+
+      const idOk = typeof id === 'string' || typeof id === 'number';
+      const contentOk = typeof content === 'string';
+      const createdAtOk = typeof created_at === 'string';
+      const similarityOk = typeof similarity === 'number';
+      // Some deployments may return `match_type` as NULL/omitted; default to 'vector'.
+      const normalizedMatchType: SearchResult['match_type'] =
+        match_type === 'tag' || match_type === 'keyword' || match_type === 'vector'
+          ? match_type
+          : 'vector';
+      const tagsOk =
+        Array.isArray(tags) && tags.every((t: unknown) => typeof t === 'string');
+
+      if (!idOk || !contentOk || !createdAtOk || !similarityOk) {
+        return null;
+      }
+
+      return {
+        id,
+        content,
+        created_at,
+        similarity,
+        match_type: normalizedMatchType,
+        tags: tagsOk ? (tags as string[]) : [],
+      } satisfies SearchResult;
+    })
+    .filter(Boolean) as SearchResult[];
+}
+
+function MatchBadge({ matchType }: { matchType: SearchResult['match_type'] }) {
+  const cfg =
+    matchType === 'tag'
+      ? { text: '🎯 Precision', cls: 'bg-emerald-500/15 text-emerald-300' }
+      : matchType === 'keyword'
+        ? { text: '🔍 Match', cls: 'bg-sky-500/15 text-sky-300' }
+        : { text: '🧠 Related', cls: 'bg-fuchsia-500/15 text-fuchsia-300' };
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] ${cfg.cls}`}>
+      {cfg.text}
+    </span>
+  );
+}
+
+function SearchResultCard({ note }: { note: SearchResult }) {
+  return (
+    <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm transition-opacity duration-300">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-[13px] text-gray-500">
+            相似度 {note.similarity.toFixed(2)}
+          </span>
+          <MatchBadge matchType={note.match_type} />
+        </div>
+        <span className="text-[13px] text-gray-500 whitespace-nowrap">
+          {new Date(note.created_at).toLocaleString()}
+        </span>
+      </div>
+
+      <p className="text-[16px] leading-relaxed text-gray-300 mb-3 whitespace-pre-wrap">
+        {note.content}
+      </p>
+
+      {note.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {note.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[13px] px-2.5 py-0.5 rounded-full bg-neutral-900 text-gray-500"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
 export default function BrainPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Note[]>([]);
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingNotes, setIsLoadingNotes] = useState(true);
   const [activeModel, setActiveModel] = useState<string | null>(null);
@@ -54,46 +154,71 @@ export default function BrainPage() {
     loadAllNotes();
   }, []);
 
-  const listToRender =
-    searchQuery.trim().length > 0 ? searchResults : notes;
+  const normalizedQuery = debouncedQuery.trim();
+  const showSearchMode = normalizedQuery.length > 0;
+  const totalCount = showSearchMode ? results.length : notes.length;
 
-  const runSearch = async (q: string, mode?: 'hybrid' | 'tag') => {
-    const query = q.trim();
-    if (!query) {
-      setSearchResults([]);
-      setActiveModel(null);
-      return;
-    }
+  useEffect(() => {
+    let cancelled = false;
 
-    setIsSearching(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({ q: query });
-      if (mode) params.set('mode', mode);
-      const res = await fetch(`/api/notes/search?${params.toString()}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to search notes');
+    const doSearch = async () => {
+      const q = normalizedQuery;
+      if (!q) {
+        setResults([]);
+        setError(null);
+        setIsSearching(false);
+        return;
       }
 
-      if (Array.isArray(data.notes)) {
-        setSearchResults(data.notes);
-      }
-    } catch (e: any) {
-      console.error(e);
-      setError(e.message ?? '搜索失败');
-    } finally {
-      setIsSearching(false);
-    }
-  };
+      setIsSearching(true);
+      setError(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
+      try {
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: q }),
+          credentials: 'include',
+        });
+        const json = await res.json();
+        // Debug: inspect actual response shape in browser console
+        console.log('Search Results:', json?.notes ?? json);
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brain/page.tsx:search.raw',message:'Search raw response inspected',data:{ok:res.ok,status:res.status,notesIsArray:Array.isArray(json?.notes),notesLength:Array.isArray(json?.notes)?json.notes.length:0,firstKeys:Array.isArray(json?.notes)&&json.notes[0]?Object.keys(json.notes[0]):[],firstTypes:Array.isArray(json?.notes)&&json.notes[0]?{id:typeof json.notes[0].id,similarity:typeof json.notes[0].similarity,match_type:typeof json.notes[0].match_type,created_at:typeof json.notes[0].created_at,tags:Array.isArray(json.notes[0].tags)?'array':typeof json.notes[0].tags,contentLength:typeof json.notes[0].content==='string'?json.notes[0].content.length:null}:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run-ui1',hypothesisId:'UI-TYPES'})}).catch(()=>{});
+        // #endregion
+
+        if (!res.ok) {
+          throw new Error(json?.error || '搜索失败');
+        }
+
+        const parsed = asSearchResults(json?.notes);
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'brain/page.tsx:search.parsed',message:'Search results parsed',data:{rawLength:Array.isArray(json?.notes)?json.notes.length:0,parsedLength:parsed.length,firstParsed:parsed[0]?{idType:typeof parsed[0].id,similarityType:typeof parsed[0].similarity,match_type:parsed[0].match_type,tagsLength:parsed[0].tags.length}:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run-ui1',hypothesisId:'UI-PARSE'})}).catch(()=>{});
+        // #endregion
+        if (!cancelled) setResults(parsed);
+      } catch (e: unknown) {
+        console.error(e);
+        if (!cancelled) {
+          setResults([]);
+          setError(e instanceof Error ? e.message : '搜索失败');
+        }
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    };
+
+    void doSearch();
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    // Keep Enter key UX, but actual searching is debounced.
     e.preventDefault();
-    setActiveModel(null);
-    await runSearch(searchQuery, 'hybrid');
   };
+
+  const visibleNotes = useMemo(() => notes, [notes]);
 
   return (
     <div className="min-h-screen bg-black text-neutral-100">
@@ -101,7 +226,7 @@ export default function BrainPage() {
         {/* 搜索 + 核心思维模型胶囊栏 */}
         <section className="space-y-4">
           <form
-            onSubmit={handleSearch}
+            onSubmit={handleSearchSubmit}
             className="flex items-center gap-3"
           >
             <div className="relative flex-1">
@@ -128,7 +253,7 @@ export default function BrainPage() {
               onClick={() => {
                 setActiveModel(null);
                 setSearchQuery('');
-                setSearchResults([]);
+                setResults([]);
               }}
               className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                 activeModel === null && !searchQuery.trim()
@@ -145,8 +270,6 @@ export default function BrainPage() {
                 onClick={() => {
                   setActiveModel(model);
                   setSearchQuery(model);
-                  // 使用和输入框一致的 Hybrid Search，保证有结果
-                  runSearch(model, 'hybrid');
                 }}
                 className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                   activeModel === model
@@ -164,14 +287,14 @@ export default function BrainPage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between text-[13px] text-gray-500">
             <span>
-              {searchQuery.trim()
+              {showSearchMode
                 ? '搜索结果'
                 : '全部内化记录'}
             </span>
             <span>
               {isLoadingNotes
                 ? '加载中…'
-                : `共 ${listToRender.length} 条`}
+                : `共 ${totalCount} 条`}
             </span>
           </div>
 
@@ -181,7 +304,7 @@ export default function BrainPage() {
             </p>
           )}
 
-          {isLoadingNotes && (
+          {!showSearchMode && isLoadingNotes && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <div className="relative h-5 w-5">
                 <div className="absolute inset-0 rounded-full bg-neutral-200/30 animate-ping" />
@@ -193,20 +316,48 @@ export default function BrainPage() {
             </div>
           )}
 
-          {!isLoadingNotes && listToRender.length === 0 && (
+          {showSearchMode && normalizedQuery === '' && (
+            <p className="text-[13px] text-gray-500">
+              Start typing to search...
+            </p>
+          )}
+
+          {showSearchMode && isSearching && <SearchSkeleton />}
+
+          {showSearchMode && !isSearching && results.length === 0 && normalizedQuery !== '' && (
+            <p className="text-[13px] text-gray-500">
+              No results found
+            </p>
+          )}
+
+          {!showSearchMode && !isLoadingNotes && visibleNotes.length === 0 && (
             <p className="text-[13px] text-gray-500">
               还没有任何笔记，或当前条件下没有匹配结果。
             </p>
           )}
 
-          {!isLoadingNotes && listToRender.length > 0 && (
+          {!showSearchMode && !isLoadingNotes && visibleNotes.length > 0 && (
             <StaggerContainer className="space-y-3">
-              {listToRender.map((note) => (
-                <StaggerItem key={note.id}>
+              {visibleNotes.map((note) => (
+                <StaggerItem key={String(note.id)}>
                   <NoteCard note={note} />
                 </StaggerItem>
               ))}
             </StaggerContainer>
+          )}
+
+          {showSearchMode && !isSearching && results.length > 0 && (
+            <div className="space-y-3">
+              {results.map((note, index) => (
+                <div
+                  key={note.id.toString()}
+                  className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
+                  style={{ animationDelay: `${index * 75}ms` }}
+                >
+                  <SearchResultCard note={note} />
+                </div>
+              ))}
+            </div>
           )}
         </section>
       </div>
