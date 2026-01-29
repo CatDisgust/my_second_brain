@@ -252,7 +252,7 @@ export default function BrainPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="在整个第二大脑中进行语义检索…"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 pl-9 pr-11 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 pl-9 pr-24 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
               />
               {isVoiceSupported && (
                 <button
@@ -262,13 +262,13 @@ export default function BrainPage() {
                     toggleListening();
                   }}
                   aria-label={isListening ? '停止语音输入' : '语音输入'}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-black ${
+                  className={`absolute right-12 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-black ${
                     isListening
-                      ? 'text-red-400 bg-red-500/15 ring-2 ring-red-500/40 animate-pulse'
-                      : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/80'
+                      ? 'text-red-500 bg-red-500/20 shadow-[0_0_0_2px_rgba(239,68,68,0.4)] animate-pulse'
+                      : 'text-gray-400 hover:text-gray-300 hover:bg-neutral-800/80 active:bg-neutral-800'
                   }`}
                 >
-                  <Mic className="h-4 w-4" aria-hidden />
+                  <Mic className="h-5 w-5 shrink-0" aria-hidden />
                 </button>
               )}
             </div>

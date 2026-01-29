@@ -50,9 +50,16 @@ interface SpeechRecognitionAlternative {
   confidence: number;
 }
 
+/** Polyfill: required for Mobile Safari / Chrome which use webkit prefix. */
 function getSpeechRecognition(): (new () => SpeechRecognitionInstance) | null {
   if (typeof window === 'undefined') return null;
-  return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
+  const SpeechRecognition = window.SpeechRecognition || (window as Window & { webkitSpeechRecognition?: new () => SpeechRecognitionInstance }).webkitSpeechRecognition;
+  return SpeechRecognition ?? null;
+}
+
+function isMobile(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|webOS|Mobile/i.test(navigator.userAgent) || (navigator as Navigator & { maxTouchPoints?: number }).maxTouchPoints > 0;
 }
 
 export function useVoiceInput(options?: {
@@ -102,7 +109,8 @@ export function useVoiceInput(options?: {
 
     const recognition = new SR() as SpeechRecognitionInstance;
     recognitionRef.current = recognition;
-    recognition.continuous = true;
+    // Mobile: continuous=false to stop after one phrase (battery/bugs); desktop can stay true.
+    recognition.continuous = !isMobile();
     recognition.interimResults = true;
     recognition.lang = language;
 
@@ -172,6 +180,7 @@ export function useVoiceInput(options?: {
     };
   }, [stopListening]);
 
+  // Strict: hide/disable UI when API is missing (e.g. unsupported mobile browser).
   const isSupported = typeof window !== 'undefined' && !!getSpeechRecognition();
 
   return {
