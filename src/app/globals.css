@@ -24,3 +24,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* iPhone 安全区与触摸优化 */
+.safe-area-padding {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* 移除 iOS 点击高亮，减少闪白 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 输入框至少 16px 防止 iOS 自动缩放 */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+@media (min-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: inherit;
+  }
+}
