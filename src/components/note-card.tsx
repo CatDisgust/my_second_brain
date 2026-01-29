@@ -21,47 +21,47 @@ export function NoteCard({ note, onDelete, deleting }: NoteCardProps) {
   return (
     <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {note.category && (
-            <span className="inline-flex items-center rounded-full bg-neutral-900 px-2.5 py-1 text-xs uppercase tracking-wide text-neutral-300">
+            <span className="inline-flex items-center rounded-full bg-neutral-900 px-2.5 py-1 text-[13px] uppercase tracking-wide text-gray-500">
               {note.category}
             </span>
           )}
           {typeof note.similarity === 'number' && (
-            <span className="text-xs text-neutral-600">
+            <span className="text-[13px] text-gray-500">
               相似度 {note.similarity.toFixed(2)}
             </span>
           )}
         </div>
-        <span className="text-xs text-neutral-600 whitespace-nowrap">
+        <span className="text-[13px] text-gray-500 whitespace-nowrap">
           {new Date(note.created_at).toLocaleString()}
         </span>
       </div>
 
-      <p className="text-[17px] text-gray-200 leading-7 mb-3 whitespace-pre-wrap">
+      <p className="text-[16px] leading-relaxed text-gray-300 mb-3 whitespace-pre-wrap">
         {note.content}
       </p>
 
       {note.summary && (
-        <p className="text-sm text-neutral-300 leading-relaxed mb-3">
+        <p className="text-[13px] text-gray-500 leading-relaxed mb-3">
           {note.summary}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3 justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           {note.mental_model && (
-            <span className="text-xs text-neutral-500">
+            <span className="text-[13px] text-gray-500">
               心智模型：{note.mental_model}
             </span>
           )}
 
           {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {note.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs px-2.5 py-0.5 rounded-full bg-neutral-900 text-neutral-400"
+                  className="text-[13px] px-2.5 py-0.5 rounded-full bg-neutral-900 text-gray-500"
                 >
                   {tag}
                 </span>
@@ -74,7 +74,7 @@ export function NoteCard({ note, onDelete, deleting }: NoteCardProps) {
           <button
             onClick={onDelete}
             disabled={deleting}
-            className="text-xs px-2.5 py-1 rounded-full border border-neutral-800 text-neutral-400 hover:bg-neutral-900 transition-colors disabled:opacity-40"
+            className="text-[15px] font-medium px-3 py-1.5 rounded-full border border-neutral-800 text-gray-400 hover:bg-neutral-900 transition-colors disabled:opacity-40"
           >
             {deleting ? '删除中…' : '删除'}
           </button>

@@ -216,7 +216,7 @@ export default function HomePage() {
 
       {/* 顶部导航 + 搜索 */}
       <header className="border-b border-neutral-900/80 backdrop-blur-sm sticky top-0 z-20 bg-black/70">
-        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between gap-6">
+        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 justify-end md:justify-between">
             <motion.div
               whileHover={{ y: -2, scale: 1.01 }}
@@ -226,11 +226,11 @@ export default function HomePage() {
               <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
                 <Brain className="h-5 w-5 text-neutral-200" />
               </div>
-              <div className="hidden sm:flex flex-col">
-                <span className="text-[11px] font-medium tracking-[0.18em] uppercase text-neutral-400">
+              <div className="hidden sm:flex flex-col gap-1">
+                <span className="text-[17px] font-semibold text-neutral-100">
                   Second Brain
                 </span>
-                <span className="text-xs text-neutral-600">
+                <span className="text-[13px] text-gray-500">
                   Capture insights. Crystallize models. Design identity.
                 </span>
               </div>
@@ -239,21 +239,21 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <form
                 onSubmit={handleSearch}
-                className="hidden md:flex flex-col gap-2 items-stretch"
+                className="hidden md:flex flex-col gap-3 items-stretch"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="relative w-60">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="语义搜索你的想法"
-                    className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                    className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:bg-neutral-900 transition-colors"
+                  className="text-[15px] font-medium px-3 py-1.5 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
                   disabled={isSearching}
                 >
                   {isSearching ? '检索中…' : '搜索'}
@@ -261,7 +261,7 @@ export default function HomePage() {
                 </div>
 
                 {/* 核心思维模型胶囊栏 */}
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
                   <button
                     type="button"
                     onClick={async () => {
@@ -286,7 +286,7 @@ export default function HomePage() {
                         setIsLoadingNotes(false);
                       }
                     }}
-                    className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                    className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                       activeModel === null && !searchQuery.trim()
                         ? 'bg-neutral-100 text-black border-neutral-300'
                         : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
@@ -304,7 +304,7 @@ export default function HomePage() {
                         // 与 /brain 一致，使用 Hybrid Search，保证有结果
                         runSearch(model, 'hybrid');
                       }}
-                      className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                      className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                         activeModel === model
                           ? 'bg-neutral-100 text-black border-neutral-300'
                           : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
@@ -319,9 +319,9 @@ export default function HomePage() {
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 px-3 py-1.5 text-[11px] text-neutral-300 hover:bg-neutral-900 transition-colors disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-3 py-1.5 text-[15px] font-medium text-neutral-300 hover:bg-neutral-900 transition-colors disabled:opacity-40"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
                 <span>{isLoggingOut ? '正在退出…' : 'Logout'}</span>
               </button>
             </div>
@@ -331,24 +331,24 @@ export default function HomePage() {
 
       {/* 主体 */}
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-6 pt-12 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-12">
+        <div className="mx-auto max-w-4xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-12">
           {/* 中央输入卡片 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-neutral-950/90 to-black/70 px-6 py-6 shadow-[0_24px_80px_rgba(15,23,42,0.85)]"
+            className="rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-neutral-950/90 to-black/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.85)]"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="h-7 w-7 rounded-full bg-neutral-900 flex items-center justify-center">
                   <Sparkles className="h-4 w-4 text-neutral-200" />
                 </span>
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium tracking-wide text-neutral-300">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[17px] font-semibold text-neutral-100">
                     Capture your current insight
                   </span>
-                  <span className="text-[11px] text-neutral-500">
+                  <span className="text-[13px] text-gray-500">
                     一次只记录一个真正重要的想法
                   </span>
                 </div>
@@ -356,7 +356,7 @@ export default function HomePage() {
             </div>
 
             <div
-              className={`relative rounded-2xl border border-neutral-800/80 bg-neutral-950/60 px-4 py-3 transition-all duration-300 ${
+              className={`relative rounded-2xl border border-neutral-800/80 bg-neutral-950/60 p-5 transition-all duration-300 ${
                 isLoading
                   ? 'backdrop-blur-[3px] border-neutral-700 bg-neutral-950/80'
                   : ''
@@ -367,7 +367,7 @@ export default function HomePage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="写下你刚刚的顿悟、感想或痛点。比如：我意识到自己在赚钱这件事上总是出于恐惧，而不是创造价值的兴趣……"
-                className="w-full resize-none bg-transparent text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none leading-relaxed max-w-2xl"
+                className="w-full resize-none bg-transparent text-[16px] leading-relaxed text-neutral-100 placeholder:text-neutral-600 focus:outline-none max-w-2xl"
                 rows={3}
                 disabled={isLoading}
               />
@@ -379,7 +379,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 4 }}
                 transition={{ duration: 0.25 }}
-                className="mt-3 flex items-center gap-3 text-[11px] text-neutral-500"
+                className="mt-4 flex items-center gap-3 text-[13px] text-gray-500"
               >
                 <div className="relative h-[2px] w-20 overflow-hidden rounded-full bg-neutral-900">
                   <motion.div
@@ -414,23 +414,23 @@ export default function HomePage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-neutral-900/60 border border-neutral-800/50 px-3 py-1.5"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-neutral-900/60 border border-neutral-800/50 px-3 py-1.5"
               >
                 <div className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-pulse" />
-                <span className="text-[11px] font-medium tracking-wide text-neutral-300">
+                <span className="text-[13px] font-medium text-neutral-300">
                   {successMessage}
                 </span>
               </motion.div>
             )}
 
             {error && (
-              <p className="mt-3 text-[11px] text-red-400">
+              <p className="mt-4 text-[13px] text-red-400">
                 {error}
               </p>
             )}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <span className="text-[11px] text-neutral-600">
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <span className="text-[13px] text-gray-500">
                 “内化” 会自动解析心智模型，并存入 Second Brain。
               </span>
               <motion.button
@@ -438,10 +438,10 @@ export default function HomePage() {
                 whileTap={{ scale: 0.97, y: 0 }}
                 onClick={handleSubmit}
                 disabled={isLoading || !content.trim()}
-                className="inline-flex items-center gap-2 rounded-full bg-neutral-100 text-black px-4 py-1.5 text-xs font-medium tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-white"
+                className="inline-flex flex-row items-center gap-2 rounded-full bg-neutral-100 text-black px-5 h-10 text-[15px] font-medium whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-white shrink-0"
               >
-                <span>{isLoading ? '正在内化…' : '内化'}</span>
-                <Brain className="h-3.5 w-3.5" />
+                <span className="whitespace-nowrap">{isLoading ? '正在内化…' : '内化'}</span>
+                <Brain className="h-4 w-4 shrink-0" />
               </motion.button>
             </div>
           </motion.div>
@@ -449,7 +449,7 @@ export default function HomePage() {
           {/* 移动端搜索框 */}
           <form
             onSubmit={handleSearch}
-            className="md:hidden flex items-center gap-2"
+            className="md:hidden flex items-center gap-3"
           >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
@@ -457,12 +457,12 @@ export default function HomePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="语义搜索你的想法"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
               />
             </div>
             <button
               type="submit"
-              className="px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:bg-neutral-900 transition-colors"
+              className="text-[15px] font-medium px-3 py-2 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
               disabled={isSearching}
             >
               搜索
@@ -470,7 +470,7 @@ export default function HomePage() {
           </form>
 
           {/* 移动端核心思维模型胶囊栏 */}
-          <div className="md:hidden -mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <div className="md:hidden -mt-6 flex items-center gap-3 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={async () => {
@@ -495,7 +495,7 @@ export default function HomePage() {
                   setIsLoadingNotes(false);
                 }
               }}
-              className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+              className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                 activeModel === null && !searchQuery.trim()
                   ? 'bg-neutral-100 text-black border-neutral-300'
                   : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
@@ -513,7 +513,7 @@ export default function HomePage() {
                   // 与桌面端一致，使用 Hybrid Search
                   runSearch(model, 'hybrid');
                 }}
-                className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                   activeModel === model
                     ? 'bg-neutral-100 text-black border-neutral-300'
                     : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
@@ -526,7 +526,7 @@ export default function HomePage() {
 
           {/* 列表 / 搜索结果 */}
           <section className="space-y-4">
-            <div className="flex items-center justify-between text-xs text-neutral-500">
+            <div className="flex items-center justify-between text-[13px] text-gray-500">
               <span>
                 {searchQuery.trim()
                   ? '搜索结果'
@@ -548,14 +548,14 @@ export default function HomePage() {
                     <div className="absolute inset-0 rounded-full bg-neutral-200/30 animate-ping" />
                     <div className="absolute inset-0 m-auto h-2.5 w-2.5 rounded-full bg-neutral-200/70 animate-pulse" />
                   </div>
-                  <div className="text-[11px] tracking-[0.18em] text-neutral-500/80 animate-pulse">
+                  <div className="text-[13px] tracking-[0.18em] text-gray-500 animate-pulse">
                     Syncing Second Brain...
                   </div>
                 </div>
               )}
 
               {!isLoadingNotes && listToRender.length === 0 && (
-                <p className="text-xs text-neutral-600">
+                <p className="text-[13px] text-gray-500">
                   还没有任何笔记。写下一条想法，让 Second Brain
                   替你进行心智建模。
                 </p>
@@ -613,7 +613,7 @@ export default function HomePage() {
               <div className="pt-2 flex justify-end">
                 <Link
                   href="/brain"
-                  className="text-[11px] text-neutral-500 hover:text-neutral-200 hover:translate-x-0.5 transition-all"
+                  className="text-[13px] text-gray-500 hover:text-neutral-200 hover:translate-x-0.5 transition-all"
                 >
                   进入第二大脑 (View Full Brain) -&gt;
                 </Link>

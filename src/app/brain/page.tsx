@@ -98,18 +98,18 @@ export default function BrainPage() {
 
   return (
     <div className="min-h-screen bg-black text-neutral-100">
-      <main className="mx-auto max-w-5xl px-6 pt-10 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
+      <main className="mx-auto max-w-5xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
         {/* 顶部：标题 + 返回入口 */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
               <Brain className="h-5 w-5 text-neutral-200" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-medium tracking-[0.18em] uppercase text-neutral-400">
+            <div className="flex flex-col gap-1">
+              <span className="text-[17px] font-semibold text-neutral-100">
                 Second Brain
               </span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-[13px] text-gray-500">
                 知识整理中心 · Entropy Reduction Console
               </span>
             </div>
@@ -117,14 +117,14 @@ export default function BrainPage() {
 
           <Link
             href="/"
-            className="text-[11px] text-neutral-400 hover:text-neutral-100 transition-colors"
+            className="text-[15px] font-medium text-gray-500 hover:text-neutral-100 transition-colors"
           >
             ← 返回捕获页
           </Link>
         </div>
 
         {/* 搜索 + 核心思维模型胶囊栏 */}
-        <section className="space-y-3">
+        <section className="space-y-4">
           <form
             onSubmit={handleSearch}
             className="flex items-center gap-3"
@@ -135,19 +135,19 @@ export default function BrainPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="在整个第二大脑中进行语义检索…"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
               />
             </div>
             <button
               type="submit"
-              className="px-3.5 py-2 rounded-full border border-neutral-800 text-[11px] text-neutral-300 hover:bg-neutral-900 transition-colors"
+              className="text-[15px] font-medium px-3.5 py-2 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
               disabled={isSearching}
             >
               {isSearching ? '检索中…' : '搜索'}
             </button>
           </form>
 
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => {
@@ -155,7 +155,7 @@ export default function BrainPage() {
                 setSearchQuery('');
                 setSearchResults([]);
               }}
-              className={`shrink-0 text-[10px] px-3 py-1 rounded-full border transition-colors ${
+              className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                 activeModel === null && !searchQuery.trim()
                   ? 'bg-neutral-100 text-black border-neutral-300'
                   : 'border-neutral-700 text-neutral-400 hover:bg-neutral-900'
@@ -173,7 +173,7 @@ export default function BrainPage() {
                   // 使用和输入框一致的 Hybrid Search，保证有结果
                   runSearch(model, 'hybrid');
                 }}
-                className={`shrink-0 text-[10px] px-3 py-1 rounded-full border transition-colors ${
+                className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                   activeModel === model
                     ? 'bg-neutral-100 text-black border-neutral-300'
                     : 'border-neutral-700 text-neutral-400 hover:bg-neutral-900'
@@ -186,8 +186,8 @@ export default function BrainPage() {
         </section>
 
         {/* 列表 */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between text-[11px] text-neutral-500">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between text-[13px] text-gray-500">
             <span>
               {searchQuery.trim()
                 ? '搜索结果'
@@ -201,7 +201,7 @@ export default function BrainPage() {
           </div>
 
           {error && (
-            <p className="text-[11px] text-red-400">
+            <p className="text-[13px] text-red-400">
               {error}
             </p>
           )}
@@ -212,20 +212,20 @@ export default function BrainPage() {
                 <div className="absolute inset-0 rounded-full bg-neutral-200/30 animate-ping" />
                 <div className="absolute inset-0 m-auto h-2.5 w-2.5 rounded-full bg-neutral-200/70 animate-pulse" />
               </div>
-              <div className="text-[11px] tracking-[0.18em] text-neutral-500/80 animate-pulse">
+              <div className="text-[13px] tracking-[0.18em] text-gray-500 animate-pulse">
                 Syncing Second Brain...
               </div>
             </div>
           )}
 
           {!isLoadingNotes && listToRender.length === 0 && (
-            <p className="text-xs text-neutral-600">
+            <p className="text-[13px] text-gray-500">
               还没有任何笔记，或当前条件下没有匹配结果。
             </p>
           )}
 
           {!isLoadingNotes && listToRender.length > 0 && (
-            <StaggerContainer className="space-y-2">
+            <StaggerContainer className="space-y-3">
               {listToRender.map((note) => (
                 <StaggerItem key={note.id}>
                   <NoteCard note={note} />
