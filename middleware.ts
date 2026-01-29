@@ -40,7 +40,15 @@ export async function middleware(req: NextRequest) {
     path.startsWith('/signup') ||
     path.startsWith('/auth');
 
-  // 未登录且访问受保护路由 -> 跳转登录
+  // 未登录访问根路径（如 mySecondBrain.dcat6809.com）-> 跳转到登录页
+  if ((path === '/' || path === '') && !user) {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('redirectedFrom', '/');
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // 未登录且访问其他受保护路由 -> 跳转登录
   if (!user && !isAuthRoute) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/login';
