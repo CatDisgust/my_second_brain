@@ -214,124 +214,109 @@ export default function HomePage() {
         <div className="absolute bottom-[-120px] right-[-40px] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom,_rgba(255,255,255,0.08),_transparent_60%)]" />
       </div>
 
-      {/* 顶部导航 + 搜索 */}
+      {/* 顶部栏：极简导航 */}
       <header className="border-b border-neutral-900/80 backdrop-blur-sm sticky top-0 z-20 bg-black/70">
-        <div className="mx-auto max-w-4xl px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1 justify-end md:justify-between">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.01 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-              className="flex items-center gap-3 cursor-default"
+        <div className="mx-auto max-w-4xl px-6 py-3 flex items-center justify-between gap-4">
+          <span className="text-[17px] font-semibold text-neutral-100 tracking-tight">
+            Capture
+          </span>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/brain"
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 px-3 py-1.5 text-[13px] text-gray-400 hover:text-neutral-100 hover:border-neutral-600 transition-colors"
             >
-              <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
-                <Brain className="h-5 w-5 text-neutral-200" />
-              </div>
-              <div className="hidden sm:flex flex-col gap-1">
-                <span className="text-[17px] font-semibold text-neutral-100">
-                  Second Brain
-                </span>
-                <span className="text-[13px] text-gray-500">
-                  Capture insights. Crystallize models. Design identity.
-                </span>
-              </div>
-            </motion.div>
-
-            <div className="flex items-center gap-3">
-              <form
-                onSubmit={handleSearch}
-                className="hidden md:flex flex-col gap-3 items-stretch"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative w-60">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="语义搜索你的想法"
-                    className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="text-[15px] font-medium px-3 py-1.5 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
-                  disabled={isSearching}
-                >
-                  {isSearching ? '检索中…' : '搜索'}
-                </button>
-                </div>
-
-                {/* 核心思维模型胶囊栏 */}
-                <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setActiveModel(null);
-                      setSearchQuery('');
-                      setSearchResults([]);
-                      // 重新加载所有笔记
-                      setIsLoadingNotes(true);
-                      setNotesLoaded(false);
-                      try {
-                        const res = await fetch('/api/notes', { credentials: 'include' });
-                        const data = await res.json();
-                        if (Array.isArray(data.notes)) {
-                          setNotes(data.notes);
-                          requestAnimationFrame(() => {
-                            setNotesLoaded(true);
-                          });
-                        }
-                      } catch (e) {
-                        console.error('Error reloading notes:', e);
-                      } finally {
-                        setIsLoadingNotes(false);
-                      }
-                    }}
-                    className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                      activeModel === null && !searchQuery.trim()
-                        ? 'bg-neutral-100 text-black border-neutral-300'
-                        : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
-                    }`}
-                  >
-                    全部
-                  </button>
-                  {CORE_MENTAL_MODELS.map((model) => (
-                    <button
-                      key={model}
-                      type="button"
-                      onClick={() => {
-                        setActiveModel(model);
-                        setSearchQuery(model);
-                        // 与 /brain 一致，使用 Hybrid Search，保证有结果
-                        runSearch(model, 'hybrid');
-                      }}
-                      className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                        activeModel === model
-                          ? 'bg-neutral-100 text-black border-neutral-300'
-                          : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
-                      }`}
-                    >
-                      {model}
-                    </button>
-                  ))}
-                </div>
-              </form>
-
-              <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-3 py-1.5 text-[15px] font-medium text-neutral-300 hover:bg-neutral-900 transition-colors disabled:opacity-40"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>{isLoggingOut ? '正在退出…' : 'Logout'}</span>
-              </button>
-            </div>
+              <Brain className="h-3.5 w-3.5" />
+              <span>My Brain →</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="inline-flex items-center gap-1.5 rounded-full border border-neutral-800 px-3 py-1.5 text-[13px] text-gray-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors disabled:opacity-40"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>{isLoggingOut ? '…' : 'Logout'}</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* 主体 */}
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-12">
+        <div className="mx-auto max-w-4xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
+          {/* 搜索栏：紧贴顶部栏下方 */}
+          <form
+            onSubmit={handleSearch}
+            className="flex flex-col gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="语义搜索你的想法"
+                  className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                />
+              </div>
+              <button
+                type="submit"
+                className="text-[15px] font-medium px-3 py-2 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors shrink-0"
+                disabled={isSearching}
+              >
+                {isSearching ? '检索中…' : '搜索'}
+              </button>
+            </div>
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={async () => {
+                  setActiveModel(null);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setIsLoadingNotes(true);
+                  setNotesLoaded(false);
+                  try {
+                    const res = await fetch('/api/notes', { credentials: 'include' });
+                    const data = await res.json();
+                    if (Array.isArray(data.notes)) {
+                      setNotes(data.notes);
+                      requestAnimationFrame(() => setNotesLoaded(true));
+                    }
+                  } catch (e) {
+                    console.error('Error reloading notes:', e);
+                  } finally {
+                    setIsLoadingNotes(false);
+                  }
+                }}
+                className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                  activeModel === null && !searchQuery.trim()
+                    ? 'bg-neutral-100 text-black border-neutral-300'
+                    : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+                }`}
+              >
+                全部
+              </button>
+              {CORE_MENTAL_MODELS.map((model) => (
+                <button
+                  key={model}
+                  type="button"
+                  onClick={() => {
+                    setActiveModel(model);
+                    setSearchQuery(model);
+                    runSearch(model, 'hybrid');
+                  }}
+                  className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                    activeModel === model
+                      ? 'bg-neutral-100 text-black border-neutral-300'
+                      : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
+                  }`}
+                >
+                  {model}
+                </button>
+              ))}
+            </div>
+          </form>
+
           {/* 中央输入卡片 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -446,84 +431,6 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* 移动端搜索框 */}
-          <form
-            onSubmit={handleSearch}
-            className="md:hidden flex items-center gap-3"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="语义搜索你的想法"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
-              />
-            </div>
-            <button
-              type="submit"
-              className="text-[15px] font-medium px-3 py-2 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
-              disabled={isSearching}
-            >
-              搜索
-            </button>
-          </form>
-
-          {/* 移动端核心思维模型胶囊栏 */}
-          <div className="md:hidden -mt-6 flex items-center gap-3 overflow-x-auto no-scrollbar">
-            <button
-              type="button"
-              onClick={async () => {
-                setActiveModel(null);
-                setSearchQuery('');
-                setSearchResults([]);
-                // 重新加载所有笔记
-                setIsLoadingNotes(true);
-                setNotesLoaded(false);
-                try {
-                  const res = await fetch('/api/notes', { credentials: 'include' });
-                  const data = await res.json();
-                  if (Array.isArray(data.notes)) {
-                    setNotes(data.notes);
-                    requestAnimationFrame(() => {
-                      setNotesLoaded(true);
-                    });
-                  }
-                } catch (e) {
-                  console.error('Error reloading notes:', e);
-                } finally {
-                  setIsLoadingNotes(false);
-                }
-              }}
-              className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                activeModel === null && !searchQuery.trim()
-                  ? 'bg-neutral-100 text-black border-neutral-300'
-                  : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
-              }`}
-            >
-              全部
-            </button>
-            {CORE_MENTAL_MODELS.map((model) => (
-              <button
-                key={model}
-                type="button"
-                onClick={() => {
-                  setActiveModel(model);
-                  setSearchQuery(model);
-                  // 与桌面端一致，使用 Hybrid Search
-                  runSearch(model, 'hybrid');
-                }}
-                className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-                  activeModel === model
-                    ? 'bg-neutral-100 text-black border-neutral-300'
-                    : 'border-neutral-800 text-neutral-400 hover:bg-neutral-900'
-                }`}
-              >
-                {model}
-              </button>
-            ))}
-          </div>
-
           {/* 列表 / 搜索结果 */}
           <section className="space-y-4">
             <div className="flex items-center justify-between text-[13px] text-gray-500">
@@ -608,17 +515,6 @@ export default function HomePage() {
                 </StaggerContainer>
               )}
             </div>
-            {/* 视觉暗示：进入第二大脑（完整视图） */}
-            {!searchQuery.trim() && !isLoadingNotes && listToRender.length > 0 && (
-              <div className="pt-2 flex justify-end">
-                <Link
-                  href="/brain"
-                  className="text-[13px] text-gray-500 hover:text-neutral-200 hover:translate-x-0.5 transition-all"
-                >
-                  进入第二大脑 (View Full Brain) -&gt;
-                </Link>
-              </div>
-            )}
           </section>
         </div>
       </main>

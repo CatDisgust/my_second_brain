@@ -19,10 +19,20 @@
   }
 }
 
+/* iOS Safari：根背景锁定，拉过头也露黑不露白 */
+html {
+  background-color: #000000 !important;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
 body {
-  background: var(--background);
+  background-color: #000000 !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  min-height: 100dvh;
+  overscroll-behavior-y: none; /* 禁止上下回弹，消除白边 */
 }
 
 /* iPhone 安全区与触摸优化 */
