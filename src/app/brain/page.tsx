@@ -32,7 +32,7 @@ export default function BrainPage() {
     const loadAllNotes = async () => {
       setIsLoadingNotes(true);
       try {
-        const res = await fetch('/api/notes?limit=400');
+        const res = await fetch('/api/notes?limit=400', { credentials: 'include' });
         const data = await res.json();
 
         if (!res.ok) {

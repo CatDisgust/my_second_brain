@@ -68,10 +68,14 @@ export default function HomePage() {
     const loadNotes = async () => {
       setIsLoadingNotes(true);
       try {
-        const res = await fetch('/api/notes');
+        const res = await fetch('/api/notes', { credentials: 'include' });
         const data = await res.json();
         
         if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = '/login?redirectedFrom=/';
+            return;
+          }
           console.error('Failed to load notes:', data.error);
           setIsLoadingNotes(false);
           return;
@@ -111,6 +115,7 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -267,7 +272,7 @@ export default function HomePage() {
                       setIsLoadingNotes(true);
                       setNotesLoaded(false);
                       try {
-                        const res = await fetch('/api/notes');
+                        const res = await fetch('/api/notes', { credentials: 'include' });
                         const data = await res.json();
                         if (Array.isArray(data.notes)) {
                           setNotes(data.notes);
@@ -476,7 +481,7 @@ export default function HomePage() {
                 setIsLoadingNotes(true);
                 setNotesLoaded(false);
                 try {
-                  const res = await fetch('/api/notes');
+                  const res = await fetch('/api/notes', { credentials: 'include' });
                   const data = await res.json();
                   if (Array.isArray(data.notes)) {
                     setNotes(data.notes);

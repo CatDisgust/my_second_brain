@@ -8,11 +8,13 @@
 --
 -- Run this in Supabase SQL Editor.
 
+-- p_user_id: 只检索该用户的笔记；传 NULL 则检索所有（兼容旧调用，建议始终传当前用户 id）
 create or replace function public.match_notes(
   query_text text,
   query_embedding vector(1536),
   match_threshold float,
-  match_count int
+  match_count int,
+  p_user_id uuid default null
 )
 returns table (
   id uuid,
@@ -52,6 +54,7 @@ begin
         else (1 - (n.embedding <=> query_embedding))
       end as similarity
     from public.notes n
+    where (p_user_id is null or n.user_id = p_user_id)
   )
   select
     scored.id,

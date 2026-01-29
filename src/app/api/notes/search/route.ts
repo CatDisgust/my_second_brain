@@ -1,48 +1,22 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { createSupabaseServerClient } from '@/utils/supabase/server';
 import { embedText } from '@/lib/openrouter';
 
-// 语义检索：根据查询语句 -> embedding -> 向量相似度匹配
-// 这里假设你在 Supabase 中为 notes 表 + pgvector 创建了一个 match_notes 函数
-// 参考官方文档：https://supabase.com/docs/guides/ai
-//
-// create or replace function match_notes(
-//   query_embedding vector(1536),
-//   match_threshold float,
-//   match_count int
-// )
-// returns table (
-//   id uuid,
-//   content text,
-//   category text,
-//   tags text[],
-//   summary text,
-//   mental_model text,
-//   created_at timestamptz,
-//   similarity float
-// )
-// language plpgsql
-// as $$
-// begin
-//   return query
-//   select
-//     n.id,
-//     n.content,
-//     n.category,
-//     n.tags,
-//     n.summary,
-//     n.mental_model,
-//     n.created_at,
-//     1 - (n.embedding <=> query_embedding) as similarity
-//   from notes n
-//   where 1 - (n.embedding <=> query_embedding) > match_threshold
-//   order by n.embedding <=> query_embedding
-//   limit match_count;
-// end;
-// $$;
+// 语义检索：仅检索当前登录用户的笔记
 
 export async function GET(request: Request) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ notes: [], error: '请先登录' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') ?? '';
     const mode = searchParams.get('mode') ?? 'hybrid';
@@ -51,12 +25,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ notes: [] });
     }
 
-    // 精准标签搜索：确定性过滤
+    // 精准标签搜索：仅当前用户
     if (mode === 'tag') {
       const tag = query.trim();
       const { data, error } = await supabaseAdmin
         .from('notes')
         .select('*')
+        .eq('user_id', user.id)
         .contains('tags', [tag])
         .order('created_at', { ascending: false })
         .limit(50);
@@ -85,6 +60,7 @@ export async function GET(request: Request) {
         query_embedding: queryEmbedding,
         match_threshold: 0.6,
         match_count: 10,
+        p_user_id: user.id,
       });
 
       if (error) {
@@ -99,10 +75,11 @@ export async function GET(request: Request) {
         vectorError,
       );
 
-      // 回退策略：使用内容和摘要的模糊匹配，避免整个搜索失败
+      // 回退策略：仅当前用户，内容和摘要模糊匹配
       const { data, error } = await supabaseAdmin
         .from('notes')
         .select('*')
+        .eq('user_id', user.id)
         .or(
           `content.ilike.%${query}%,summary.ilike.%${query}%,mental_model.ilike.%${query}%`,
         )

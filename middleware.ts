@@ -36,7 +36,9 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isAuthRoute =
-    path.startsWith('/login') || path.startsWith('/auth');
+    path.startsWith('/login') ||
+    path.startsWith('/signup') ||
+    path.startsWith('/auth');
 
   // 未登录且访问受保护路由 -> 跳转登录
   if (!user && !isAuthRoute) {
@@ -46,8 +48,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 已登录访问 /login -> 重定向首页
-  if (user && path.startsWith('/login')) {
+  // 已登录访问 /login 或 /signup -> 重定向首页
+  if (user && (path.startsWith('/login') || path.startsWith('/signup'))) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = '/';
     redirectUrl.searchParams.delete('redirectedFrom');
