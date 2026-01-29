@@ -98,7 +98,7 @@ export default function BrainPage() {
 
   return (
     <div className="min-h-screen bg-black text-neutral-100">
-      <main className="mx-auto max-w-5xl px-6 pt-10 pb-20 space-y-8">
+      <main className="mx-auto max-w-5xl px-6 pt-10 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
         {/* 顶部：标题 + 返回入口 */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

@@ -12,8 +12,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** 物理手感：禁止双指缩放，像原生 App 一样稳固 */
+/** iPhone Safari：纯黑主题 + 填满刘海屏，无白边 */
 export const viewport: Viewport = {
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

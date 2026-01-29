@@ -331,7 +331,7 @@ export default function HomePage() {
 
       {/* 主体 */}
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-6 pt-12 pb-20 space-y-12">
+        <div className="mx-auto max-w-4xl px-6 pt-12 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-12">
           {/* 中央输入卡片 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
