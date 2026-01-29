@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, LogOut, Search, Sparkles } from 'lucide-react';
+import {
+  StaggerContainer,
+  StaggerItem,
+} from '@/components/ui/stagger-list';
 
 // 隐藏横向滚动条（Entropy Reduction View）
 // 这里用内联全局样式避免引入额外依赖/配置
@@ -53,6 +57,8 @@ export default function HomePage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeModel, setActiveModel] = useState<string | null>(null);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(true);
+  const [notesLoaded, setNotesLoaded] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -67,14 +73,31 @@ export default function HomePage() {
   // 加载最近的 notes
   useEffect(() => {
     const loadNotes = async () => {
+      setIsLoadingNotes(true);
       try {
         const res = await fetch('/api/notes');
         const data = await res.json();
+        
+        if (!res.ok) {
+          console.error('Failed to load notes:', data.error);
+          setIsLoadingNotes(false);
+          return;
+        }
+        
         if (Array.isArray(data.notes)) {
+          console.log(`Loaded ${data.notes.length} notes`);
           setNotes(data.notes);
+          // 延迟一帧确保 DOM 更新后再触发动画
+          requestAnimationFrame(() => {
+            setNotesLoaded(true);
+          });
+        } else {
+          console.warn('Invalid notes data format:', data);
         }
       } catch (e) {
-        console.error(e);
+        console.error('Error loading notes:', e);
+      } finally {
+        setIsLoadingNotes(false);
       }
     };
     loadNotes();
@@ -243,10 +266,27 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setActiveModel(null);
                       setSearchQuery('');
                       setSearchResults([]);
+                      // 重新加载所有笔记
+                      setIsLoadingNotes(true);
+                      setNotesLoaded(false);
+                      try {
+                        const res = await fetch('/api/notes');
+                        const data = await res.json();
+                        if (Array.isArray(data.notes)) {
+                          setNotes(data.notes);
+                          requestAnimationFrame(() => {
+                            setNotesLoaded(true);
+                          });
+                        }
+                      } catch (e) {
+                        console.error('Error reloading notes:', e);
+                      } finally {
+                        setIsLoadingNotes(false);
+                      }
                     }}
                     className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
                       activeModel === null && !searchQuery.trim()
@@ -434,10 +474,27 @@ export default function HomePage() {
           <div className="md:hidden -mt-6 flex items-center gap-2 overflow-x-auto no-scrollbar">
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setActiveModel(null);
                 setSearchQuery('');
                 setSearchResults([]);
+                // 重新加载所有笔记
+                setIsLoadingNotes(true);
+                setNotesLoaded(false);
+                try {
+                  const res = await fetch('/api/notes');
+                  const data = await res.json();
+                  if (Array.isArray(data.notes)) {
+                    setNotes(data.notes);
+                    requestAnimationFrame(() => {
+                      setNotesLoaded(true);
+                    });
+                  }
+                } catch (e) {
+                  console.error('Error reloading notes:', e);
+                } finally {
+                  setIsLoadingNotes(false);
+                }
               }}
               className={`shrink-0 text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
                 activeModel === null && !searchQuery.trim()
@@ -485,23 +542,35 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-3">
-              {listToRender.length === 0 && (
+              {isLoadingNotes && !searchQuery.trim() && (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <div className="relative h-5 w-5">
+                    <div className="absolute inset-0 rounded-full bg-neutral-200/30 animate-ping" />
+                    <div className="absolute inset-0 m-auto h-2.5 w-2.5 rounded-full bg-neutral-200/70 animate-pulse" />
+                  </div>
+                  <div className="text-[11px] tracking-[0.18em] text-neutral-500/80 animate-pulse">
+                    Syncing Second Brain...
+                  </div>
+                </div>
+              )}
+
+              {!isLoadingNotes && listToRender.length === 0 && (
                 <p className="text-xs text-neutral-600">
                   还没有任何笔记。写下一条想法，让 Second Brain
                   替你进行心智建模。
                 </p>
               )}
 
-              <AnimatePresence initial={false}>
-                {listToRender.map((note) => (
-                  <motion.article
-                    key={note.id}
-                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
-                  >
+              {!isLoadingNotes && listToRender.length > 0 && (
+                <StaggerContainer
+                  key={`stagger-${notesLoaded ? 'ready' : 'loading'}-${listToRender.length}`}
+                  className="space-y-3"
+                >
+                  {listToRender.map((note) => (
+                    <StaggerItem key={note.id}>
+                      <motion.article
+                        className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 px-4 py-3 backdrop-blur-sm"
+                      >
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2">
                         {note.category && (
@@ -591,9 +660,11 @@ export default function HomePage() {
                         {deletingId === note.id ? '删除中…' : '删除'}
                       </button>
                     </div>
-                  </motion.article>
-                ))}
-              </AnimatePresence>
+                      </motion.article>
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
+              )}
             </div>
           </section>
         </div>
