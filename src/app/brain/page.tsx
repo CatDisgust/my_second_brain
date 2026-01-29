@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Mic } from 'lucide-react';
 import {
   StaggerContainer,
   StaggerItem,
@@ -9,6 +9,7 @@ import {
 import { NoteCard, type Note } from '@/components/note-card';
 import { SearchSkeleton } from '@/components/search-skeleton';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useVoiceInput } from '@/hooks/use-voice-input';
 
 const CORE_MENTAL_MODELS = [
   '基本事实',
@@ -126,6 +127,22 @@ export default function BrainPage() {
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const {
+    isListening,
+    transcript,
+    error: voiceError,
+    isSupported: isVoiceSupported,
+    toggleListening,
+  } = useVoiceInput({
+    language: 'zh-CN',
+    silenceAutoSubmitMs: 2000,
+  });
+
+  // Sync voice transcript into search input in real time
+  useEffect(() => {
+    if (transcript) setSearchQuery(transcript);
+  }, [transcript]);
+
   // 初始加载：拉取更多历史记录（知识整理页用）
   useEffect(() => {
     const loadAllNotes = async () => {
@@ -229,14 +246,31 @@ export default function BrainPage() {
             onSubmit={handleSearchSubmit}
             className="flex items-center gap-3"
           >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+            <div className="relative flex-1 flex items-center">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500 pointer-events-none" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="在整个第二大脑中进行语义检索…"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 px-9 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 pl-9 pr-11 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
               />
+              {isVoiceSupported && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isListening) setSearchQuery('');
+                    toggleListening();
+                  }}
+                  aria-label={isListening ? '停止语音输入' : '语音输入'}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-black ${
+                    isListening
+                      ? 'text-red-400 bg-red-500/15 ring-2 ring-red-500/40 animate-pulse'
+                      : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/80'
+                  }`}
+                >
+                  <Mic className="h-4 w-4" aria-hidden />
+                </button>
+              )}
             </div>
             <button
               type="submit"
@@ -298,9 +332,9 @@ export default function BrainPage() {
             </span>
           </div>
 
-          {error && (
+          {(error || voiceError) && (
             <p className="text-[13px] text-red-400">
-              {error}
+              {error ?? voiceError}
             </p>
           )}
 
