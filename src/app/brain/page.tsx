@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Brain, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   StaggerContainer,
   StaggerItem,
@@ -98,31 +97,7 @@ export default function BrainPage() {
 
   return (
     <div className="min-h-screen bg-black text-neutral-100">
-      <main className="mx-auto max-w-5xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
-        {/* 顶部：标题 + 返回入口 */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-neutral-900 flex items-center justify-center shadow-[0_0_24px_rgba(15,23,42,0.7)]">
-              <Brain className="h-5 w-5 text-neutral-200" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[17px] font-semibold text-neutral-100">
-                Second Brain
-              </span>
-              <span className="text-[13px] text-gray-500">
-                知识整理中心 · Entropy Reduction Console
-              </span>
-            </div>
-          </div>
-
-          <Link
-            href="/"
-            className="text-[15px] font-medium text-gray-500 hover:text-neutral-100 transition-colors"
-          >
-            ← 返回捕获页
-          </Link>
-        </div>
-
+      <div className="mx-auto max-w-5xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
         {/* 搜索 + 核心思维模型胶囊栏 */}
         <section className="space-y-4">
           <form
@@ -234,7 +209,7 @@ export default function BrainPage() {
             </StaggerContainer>
           )}
         </section>
-      </main>
+      </div>
     </div>
   );
 }
