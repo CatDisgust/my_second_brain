@@ -35,7 +35,7 @@ export default function HomePage() {
     const loadNotes = async () => {
       setIsLoadingNotes(true);
       try {
-        const res = await fetch('/api/notes', { credentials: 'include' });
+        const res = await fetch('/api/notes?limit=5', { credentials: 'include' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -98,7 +98,7 @@ export default function HomePage() {
     }
   };
 
-  const latestNote = notes[0] ?? null;
+  const recentNotes = notes.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-black text-neutral-100 flex flex-col">
@@ -218,7 +218,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {!isLoadingNotes && latestNote && (
+          {!isLoadingNotes && recentNotes.length > 0 && (
             <motion.section
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -228,7 +228,11 @@ export default function HomePage() {
               <span className="text-[13px] text-gray-500">
                 最近的内化
               </span>
-              <NoteCard note={latestNote} />
+              <div className="flex flex-col gap-3">
+                {recentNotes.map((note) => (
+                  <NoteCard key={String(note.id)} note={note} />
+                ))}
+              </div>
             </motion.section>
           )}
 

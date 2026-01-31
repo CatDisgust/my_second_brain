@@ -18,6 +18,9 @@ export type NoteAnalysis = {
 
 // 调用 OpenRouter + Gemini 做心智模型分析，使用 First Principles system prompt，强制返回 JSON
 export async function analyzeNote(content: string): Promise<NoteAnalysis> {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/openrouter.ts:analyzeNote:entry',message:'analyzeNote entry',data:{contentLength:content?.length??0,baseUrl:OPENROUTER_BASE_URL,hasApiKey:!!OPENROUTER_API_KEY,model:'google/gemini-3-pro-preview'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1-H3'})}).catch(()=>{});
+  // #endregion
   const systemPrompt = `
 Role: You are a deep-thinking AI assistant inspired by Dan Koe's philosophy and First Principles Thinking.
 Language: **Reply in Simplified Chinese (简体中文)**.
@@ -66,32 +69,64 @@ Return ONLY a JSON object with the following shape (no extra text):
 }
 `;
 
-  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-    },
-    body: JSON.stringify({
-      // 通过 Cloudflare Worker 代理，使用 Gemini 3 Pro
-      model: 'google/gemini-3-pro-preview',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      temperature: 0.3,
-    }),
-  });
+  const chatUrl = `${OPENROUTER_BASE_URL}/chat/completions`;
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/openrouter.ts:analyzeNote:beforeFetch',message:'before fetch chat/completions',data:{urlPath:chatUrl.replace(/^https?:\/\/[^/]+/,'')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+  // #endregion
+  const CHAT_TIMEOUT_MS = 90_000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(chatUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-pro-preview',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 4096,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const isAbort = err instanceof Error && err.name === 'AbortError';
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('OpenRouter analyzeNote fetch error:', msg, err);
+    if (isAbort) {
+      throw new Error('分析请求超时，请稍后重试');
+    }
+    if (/fetch failed|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network/i.test(msg)) {
+      throw new Error('分析服务连接失败，请检查网络或代理设置后重试');
+    }
+    throw new Error(`分析请求失败：${msg}`);
+  }
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const text = await response.text();
     console.error('OpenRouter analyzeNote error:', text);
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/openrouter.ts:analyzeNote:notOk',message:'response not ok',data:{status:response.status,statusText:response.statusText,bodyPreview:String(text).slice(0,400)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2-H5'})}).catch(()=>{});
+    // #endregion
+    if (response.status === 402) {
+      let userMsg = 'OpenRouter 额度不足，请减少 max_tokens 或充值后重试';
+      try {
+        const errBody = JSON.parse(text);
+        const apiMsg = errBody?.error?.message;
+        if (typeof apiMsg === 'string' && apiMsg) userMsg = apiMsg;
+      } catch {
+        // use default
+      }
+      throw new Error(userMsg);
+    }
     throw new Error('Failed to analyze note via OpenRouter');
   }
 

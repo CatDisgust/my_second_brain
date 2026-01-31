@@ -34,6 +34,9 @@ export async function POST(request: Request) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'AI 分析失败';
       console.error('POST /api/notes analyzeNote:', e);
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api/notes/route.ts:analyzeNote:catch',message:'analyzeNote threw',data:{errMsg:msg,name:e instanceof Error?e.name:'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
+      // #endregion
       return NextResponse.json({ error: msg }, { status: 502 });
     }
 

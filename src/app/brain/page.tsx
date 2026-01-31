@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Mic } from 'lucide-react';
+import { Search, Mic, Trash2 } from 'lucide-react';
 import {
   StaggerContainer,
   StaggerItem,
@@ -82,10 +82,38 @@ function MatchBadge({ matchType }: { matchType: SearchResult['match_type'] }) {
   );
 }
 
-function SearchResultCard({ note }: { note: SearchResult }) {
+const DELETE_CONFIRM_MESSAGE =
+  '确定要删除这条内化记录吗？这将无法恢复。';
+
+function SearchResultCard({
+  note,
+  onDelete,
+  deleting,
+}: {
+  note: SearchResult;
+  onDelete?: (id: string | number) => void | Promise<void>;
+  deleting?: boolean;
+}) {
+  const handleDeleteClick = () => {
+    if (!onDelete) return;
+    if (!window.confirm(DELETE_CONFIRM_MESSAGE)) return;
+    void onDelete(note.id);
+  };
+
   return (
-    <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm transition-opacity duration-300">
-      <div className="flex items-center justify-between gap-3 mb-3">
+    <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm transition-opacity duration-300 relative">
+      {onDelete && (
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          disabled={deleting}
+          aria-label="删除这条内化记录"
+          className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-neutral-950 disabled:opacity-50 disabled:pointer-events-none z-10"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+      <div className="flex items-center justify-between gap-3 mb-3 pr-8">
         <div className="inline-flex items-center gap-2">
           <span className="text-[13px] text-gray-500">
             相似度 {note.similarity.toFixed(2)}
@@ -126,6 +154,29 @@ export default function BrainPage() {
   const [isLoadingNotes, setIsLoadingNotes] = useState(true);
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
+
+  const handleDeleteNote = async (id: string | number) => {
+    setDeletingId(id);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/notes?id=${encodeURIComponent(String(id))}`,
+        { method: 'DELETE', credentials: 'include' },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data.error as string) || '删除失败');
+        return;
+      }
+      setNotes((prev) => prev.filter((n) => String(n.id) !== String(id)));
+      setResults((prev) => prev.filter((n) => String(n.id) !== String(id)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const {
     isListening,
@@ -374,7 +425,11 @@ export default function BrainPage() {
             <StaggerContainer className="space-y-3">
               {visibleNotes.map((note) => (
                 <StaggerItem key={String(note.id)}>
-                  <NoteCard note={note} />
+                  <NoteCard
+                    note={note}
+                    onDelete={handleDeleteNote}
+                    deleting={deletingId === note.id}
+                  />
                 </StaggerItem>
               ))}
             </StaggerContainer>
@@ -388,7 +443,11 @@ export default function BrainPage() {
                   className="animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
                   style={{ animationDelay: `${index * 75}ms` }}
                 >
-                  <SearchResultCard note={note} />
+                  <SearchResultCard
+                    note={note}
+                    onDelete={handleDeleteNote}
+                    deleting={deletingId === note.id}
+                  />
                 </div>
               ))}
             </div>
