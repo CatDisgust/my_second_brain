@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Search, Mic, Trash2 } from 'lucide-react';
 import {
   StaggerContainer,
@@ -71,10 +73,10 @@ function asSearchResults(input: unknown): SearchResult[] {
 function MatchBadge({ matchType }: { matchType: SearchResult['match_type'] }) {
   const cfg =
     matchType === 'tag'
-      ? { text: '🎯 Precision', cls: 'bg-emerald-500/15 text-emerald-300' }
+      ? { text: '🎯 Precision', cls: 'bg-emerald-100 text-emerald-700' }
       : matchType === 'keyword'
-        ? { text: '🔍 Match', cls: 'bg-sky-500/15 text-sky-300' }
-        : { text: '🧠 Related', cls: 'bg-fuchsia-500/15 text-fuchsia-300' };
+        ? { text: '🔍 Match', cls: 'bg-sky-100 text-sky-700' }
+        : { text: '🧠 Related', cls: 'bg-fuchsia-100 text-fuchsia-700' };
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] ${cfg.cls}`}>
       {cfg.text}
@@ -101,31 +103,31 @@ function SearchResultCard({
   };
 
   return (
-    <article className="rounded-2xl border border-neutral-900/80 bg-neutral-950/60 p-5 backdrop-blur-sm transition-opacity duration-300 relative">
+    <article className="rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 p-5 shadow-[0_8px_30px_rgba(247,235,225,0.8)] transition-opacity duration-300 relative">
       {onDelete && (
         <button
           type="button"
           onClick={handleDeleteClick}
           disabled={deleting}
           aria-label="删除这条内化记录"
-          className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-neutral-950 disabled:opacity-50 disabled:pointer-events-none z-10"
+          className="absolute top-3 right-3 p-1.5 rounded-md text-slate-400 hover:text-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 disabled:pointer-events-none z-10"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       )}
       <div className="flex items-center justify-between gap-3 mb-3 pr-8">
         <div className="inline-flex items-center gap-2">
-          <span className="text-[13px] text-gray-500">
+          <span className="text-[13px] text-slate-600">
             相似度 {note.similarity.toFixed(2)}
           </span>
           <MatchBadge matchType={note.match_type} />
         </div>
-        <span className="text-[13px] text-gray-500 whitespace-nowrap">
+        <span className="text-[13px] text-slate-600 whitespace-nowrap">
           {new Date(note.created_at).toLocaleString()}
         </span>
       </div>
 
-      <p className="text-[16px] leading-relaxed text-gray-300 mb-3 whitespace-pre-wrap">
+      <p className="text-[16px] leading-relaxed text-stone-900 mb-3 whitespace-pre-wrap">
         {note.content}
       </p>
 
@@ -134,7 +136,7 @@ function SearchResultCard({
           {note.tags.map((tag) => (
             <span
               key={tag}
-              className="text-[13px] px-2.5 py-0.5 rounded-full bg-neutral-900 text-gray-500"
+              className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-indigo-100 transition-colors"
             >
               {tag}
             </span>
@@ -145,8 +147,14 @@ function SearchResultCard({
   );
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function BrainPage() {
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
   const [notes, setNotes] = useState<Note[]>([]);
+  const [totalNotesCount, setTotalNotesCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedQuery = useDebounce(searchQuery, 300);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -171,6 +179,7 @@ export default function BrainPage() {
       }
       setNotes((prev) => prev.filter((n) => String(n.id) !== String(id)));
       setResults((prev) => prev.filter((n) => String(n.id) !== String(id)));
+      setTotalNotesCount((c) => Math.max(0, c - 1));
     } catch (e) {
       setError(e instanceof Error ? e.message : '删除失败');
     } finally {
@@ -194,12 +203,12 @@ export default function BrainPage() {
     if (transcript) setSearchQuery(transcript);
   }, [transcript]);
 
-  // 初始加载：拉取更多历史记录（知识整理页用）
+  // 分页加载：每页 10 条（知识整理页用）
   useEffect(() => {
-    const loadAllNotes = async () => {
+    const loadNotes = async () => {
       setIsLoadingNotes(true);
       try {
-        const res = await fetch('/api/notes?limit=400', { credentials: 'include' });
+        const res = await fetch(`/api/notes?page=${page}`, { credentials: 'include' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -211,6 +220,9 @@ export default function BrainPage() {
         if (Array.isArray(data.notes)) {
           setNotes(data.notes);
         }
+        if (typeof data.totalCount === 'number') {
+          setTotalNotesCount(data.totalCount);
+        }
       } catch (e: any) {
         console.error('Error loading notes for brain page:', e);
         setError(e.message ?? '加载笔记失败');
@@ -219,12 +231,14 @@ export default function BrainPage() {
       }
     };
 
-    loadAllNotes();
-  }, []);
+    loadNotes();
+  }, [page]);
 
   const normalizedQuery = debouncedQuery.trim();
   const showSearchMode = normalizedQuery.length > 0;
-  const totalCount = showSearchMode ? results.length : notes.length;
+  const totalCount = showSearchMode ? results.length : totalNotesCount;
+  const hasNextPage = !showSearchMode && page * ITEMS_PER_PAGE < totalNotesCount;
+  const hasPrevPage = page > 1;
 
   useEffect(() => {
     let cancelled = false;
@@ -289,7 +303,7 @@ export default function BrainPage() {
   const visibleNotes = useMemo(() => notes, [notes]);
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100">
+    <div className="min-h-screen text-slate-900">
       <div className="mx-auto max-w-5xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] space-y-8">
         {/* 搜索 + 核心思维模型胶囊栏 */}
         <section className="space-y-4">
@@ -298,12 +312,12 @@ export default function BrainPage() {
             className="flex items-center gap-3"
           >
             <div className="relative flex-1 flex items-center">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="在整个第二大脑中进行语义检索…"
-                className="w-full rounded-full bg-neutral-950/80 border border-neutral-800 pl-9 pr-24 py-2.5 text-[16px] text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full rounded-full bg-[#fcfaf5] border border-stone-200 pl-9 pr-24 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-stone-400 focus:ring-0 transition-colors shadow-sm"
               />
               {isVoiceSupported && (
                 <button
@@ -313,10 +327,10 @@ export default function BrainPage() {
                     toggleListening();
                   }}
                   aria-label={isListening ? '停止语音输入' : '语音输入'}
-                  className={`absolute right-12 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-black ${
+                  className={`absolute right-12 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-stone-50 ${
                     isListening
-                      ? 'text-red-500 bg-red-500/20 shadow-[0_0_0_2px_rgba(239,68,68,0.4)] animate-pulse'
-                      : 'text-gray-400 hover:text-gray-300 hover:bg-neutral-800/80 active:bg-neutral-800'
+                      ? 'text-red-500 bg-red-50 shadow-[0_0_0_2px_rgba(239,68,68,0.3)] animate-pulse'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200'
                   }`}
                 >
                   <Mic className="h-5 w-5 shrink-0" aria-hidden />
@@ -325,7 +339,7 @@ export default function BrainPage() {
             </div>
             <button
               type="submit"
-              className="text-[15px] font-medium px-3.5 py-2 rounded-full border border-neutral-800 text-neutral-300 hover:bg-neutral-900 transition-colors"
+              className="text-[15px] font-medium px-3.5 py-2 rounded-full border border-stone-200 text-stone-800 bg-white hover:bg-stone-50 transition-colors shadow-sm disabled:opacity-50"
               disabled={isSearching}
             >
               {isSearching ? '检索中…' : '搜索'}
@@ -342,8 +356,8 @@ export default function BrainPage() {
               }}
               className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                 activeModel === null && !searchQuery.trim()
-                  ? 'bg-neutral-100 text-black border-neutral-300'
-                  : 'border-neutral-700 text-neutral-400 hover:bg-neutral-900'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'border-stone-200 text-stone-700 bg-white hover:bg-stone-50'
               }`}
             >
               全部
@@ -358,8 +372,8 @@ export default function BrainPage() {
                 }}
                 className={`shrink-0 text-[15px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
                   activeModel === model
-                    ? 'bg-neutral-100 text-black border-neutral-300'
-                    : 'border-neutral-700 text-neutral-400 hover:bg-neutral-900'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'border-stone-200 text-stone-700 bg-white hover:bg-stone-50'
                 }`}
               >
                 {model}
@@ -370,7 +384,7 @@ export default function BrainPage() {
 
         {/* 列表 */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between text-[13px] text-gray-500">
+          <div className="flex items-center justify-between text-[13px] text-slate-500">
             <span>
               {showSearchMode
                 ? '搜索结果'
@@ -384,7 +398,7 @@ export default function BrainPage() {
           </div>
 
           {(error || voiceError) && (
-            <p className="text-[13px] text-red-400">
+            <p className="text-[13px] text-red-600">
               {error ?? voiceError}
             </p>
           )}
@@ -392,17 +406,17 @@ export default function BrainPage() {
           {!showSearchMode && isLoadingNotes && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <div className="relative h-5 w-5">
-                <div className="absolute inset-0 rounded-full bg-neutral-200/30 animate-ping" />
-                <div className="absolute inset-0 m-auto h-2.5 w-2.5 rounded-full bg-neutral-200/70 animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-indigo-300 animate-ping" />
+                <div className="absolute inset-0 m-auto h-2.5 w-2.5 rounded-full bg-indigo-600 animate-pulse" />
               </div>
-              <div className="text-[13px] tracking-[0.18em] text-gray-500 animate-pulse">
+              <div className="text-stone-500 font-medium tracking-widest text-xs uppercase animate-pulse">
                 Syncing Second Brain...
               </div>
             </div>
           )}
 
           {showSearchMode && normalizedQuery === '' && (
-            <p className="text-[13px] text-gray-500">
+            <p className="text-[13px] text-slate-500">
               Start typing to search...
             </p>
           )}
@@ -410,29 +424,58 @@ export default function BrainPage() {
           {showSearchMode && isSearching && <SearchSkeleton />}
 
           {showSearchMode && !isSearching && results.length === 0 && normalizedQuery !== '' && (
-            <p className="text-[13px] text-gray-500">
+            <p className="text-[13px] text-slate-500">
               No results found
             </p>
           )}
 
           {!showSearchMode && !isLoadingNotes && visibleNotes.length === 0 && (
-            <p className="text-[13px] text-gray-500">
+            <p className="text-[13px] text-slate-500">
               还没有任何笔记，或当前条件下没有匹配结果。
             </p>
           )}
 
           {!showSearchMode && !isLoadingNotes && visibleNotes.length > 0 && (
-            <StaggerContainer className="space-y-3">
-              {visibleNotes.map((note) => (
-                <StaggerItem key={String(note.id)}>
-                  <NoteCard
-                    note={note}
-                    onDelete={handleDeleteNote}
-                    deleting={deletingId === note.id}
-                  />
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
+            <>
+              <StaggerContainer className="space-y-3">
+                {visibleNotes.map((note) => (
+                  <StaggerItem key={String(note.id)}>
+                    <NoteCard
+                      note={note}
+                      onDelete={handleDeleteNote}
+                      deleting={deletingId === note.id}
+                    />
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+              <div className="flex justify-center items-center gap-6 mt-12 mb-16">
+                <Link
+                  href={hasPrevPage ? `/brain?page=${page - 1}` : '#'}
+                  className={`inline-flex items-center justify-center rounded-full bg-white border text-sm font-medium px-5 py-2.5 transition-all shadow-sm ${
+                    hasPrevPage
+                      ? 'border-stone-200 text-stone-600 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-md'
+                      : 'border-stone-200 text-stone-400 opacity-40 cursor-not-allowed pointer-events-none shadow-none'
+                  }`}
+                  aria-disabled={!hasPrevPage}
+                >
+                  ← Prev
+                </Link>
+                <span className="text-xs font-mono text-stone-400 tracking-widest uppercase">
+                  PAGE {page}
+                </span>
+                <Link
+                  href={hasNextPage ? `/brain?page=${page + 1}` : '#'}
+                  className={`inline-flex items-center justify-center rounded-full bg-white border text-sm font-medium px-5 py-2.5 transition-all shadow-sm ${
+                    hasNextPage
+                      ? 'border-stone-200 text-stone-600 hover:text-indigo-600 hover:border-indigo-200 hover:shadow-md'
+                      : 'border-stone-200 text-stone-400 opacity-40 cursor-not-allowed pointer-events-none shadow-none'
+                  }`}
+                  aria-disabled={!hasNextPage}
+                >
+                  Next →
+                </Link>
+              </div>
+            </>
           )}
 
           {showSearchMode && !isSearching && results.length > 0 && (

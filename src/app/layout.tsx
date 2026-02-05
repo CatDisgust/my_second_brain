@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** iPhone Safari：纯黑主题 + 填满刘海屏，无白边 */
+/** Light theme + viewport */
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#fafaf9",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Second Brain",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
@@ -44,7 +44,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GlobalHeader />
-        <main className="pt-[calc(3.5rem+env(safe-area-inset-top))]">
+        <main className="pt-[calc(3.5rem+env(safe-area-inset-top))] bg-transparent min-h-screen">
           {children}
         </main>
       </body>

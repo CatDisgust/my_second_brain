@@ -117,24 +117,24 @@ export default function AuthConfirmPage() {
 
   if (status === 'verifying' || status === 'idle') {
     return (
-      <div className="min-h-screen bg-black text-neutral-100 flex items-center justify-center">
-        <p className="text-sm text-neutral-400">正在验证邮箱…</p>
+      <div className="min-h-screen text-slate-900 flex items-center justify-center">
+        <p className="text-sm text-slate-500">正在验证邮箱…</p>
       </div>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-black text-neutral-100 flex items-center justify-center px-6">
+      <div className="min-h-screen text-slate-900 flex items-center justify-center px-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center space-y-4 max-w-sm"
         >
-          <p className="text-sm text-red-400">{errorMsg}</p>
+          <p className="text-sm text-red-600">{errorMsg}</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-neutral-100 underline underline-offset-2"
+            className="inline-flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
           >
             返回登录
             <ArrowRight className="h-3.5 w-3.5" />
@@ -145,10 +145,7 @@ export default function AuthConfirmPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex items-center justify-center relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.18),_transparent_60%)]" />
-      </div>
+    <div className="min-h-screen text-slate-900 flex items-center justify-center relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -159,8 +156,8 @@ export default function AuthConfirmPage() {
           <CheckCircle className="h-14 w-14 text-emerald-500" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-lg font-semibold text-neutral-50">邮箱验证成功</h1>
-          <p className="text-xs text-neutral-500 leading-relaxed">
+          <h1 className="text-lg font-semibold text-slate-800">邮箱验证成功</h1>
+          <p className="text-xs text-slate-500 leading-relaxed">
             请通过登录页进入主页。
           </p>
         </div>

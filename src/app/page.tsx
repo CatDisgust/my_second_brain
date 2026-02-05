@@ -98,35 +98,27 @@ export default function HomePage() {
     }
   };
 
-  const recentNotes = notes.slice(0, 5);
-
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex flex-col">
-      {/* 背景光晕 */}
-      <div className="pointer-events-none fixed inset-0 opacity-40">
-        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.18),_transparent_60%)]" />
-        <div className="absolute bottom-[-120px] right-[-40px] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom,_rgba(255,255,255,0.08),_transparent_60%)]" />
-      </div>
-
-      <div className="relative flex-1 flex flex-col">
+    <div className="min-h-screen text-slate-900 flex flex-col bg-transparent">
+      <div className="relative flex-1 flex flex-col bg-transparent">
         <div className="mx-auto w-full max-w-2xl px-6 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-6 flex flex-col gap-8">
           {/* 输入区：直接聚焦 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-neutral-950/90 to-black/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.85)]"
+            className="rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 p-5 shadow-[0_8px_30px_rgba(247,235,225,0.8)]"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="h-7 w-7 rounded-full bg-neutral-900 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-neutral-200" />
+                <span className="h-7 w-7 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-slate-600" />
                 </span>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[17px] font-semibold text-neutral-100">
+                  <span className="text-[17px] font-semibold text-stone-900">
                     Capture your current insight
                   </span>
-                  <span className="text-[13px] text-gray-500">
+                  <span className="text-[13px] text-slate-600">
                     一次只记录一个真正重要的想法
                   </span>
                 </div>
@@ -134,10 +126,8 @@ export default function HomePage() {
             </div>
 
             <div
-              className={`relative rounded-2xl border border-neutral-800/80 bg-neutral-950/60 p-5 transition-all duration-300 ${
-                isLoading
-                  ? 'backdrop-blur-[3px] border-neutral-700 bg-neutral-950/80'
-                  : ''
+              className={`relative rounded-xl border border-white/40 bg-white/50 backdrop-blur-sm p-5 transition-all duration-300 ${
+                isLoading ? 'border-stone-300/50 bg-stone-50/50' : ''
               }`}
             >
               <textarea
@@ -145,7 +135,7 @@ export default function HomePage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="写下你刚刚的顿悟、感想或痛点。比如：我意识到自己在赚钱这件事上总是出于恐惧，而不是创造价值的兴趣……"
-                className="w-full resize-none bg-transparent text-[16px] leading-relaxed text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
+                className="w-full resize-none bg-transparent text-[16px] leading-relaxed text-stone-900 placeholder:text-slate-500 focus:outline-none"
                 rows={3}
                 disabled={isLoading}
               />
@@ -156,11 +146,11 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25 }}
-                className="mt-4 flex items-center gap-3 text-[13px] text-gray-500"
+                className="mt-4 flex items-center gap-3 text-[13px] text-slate-600"
               >
-                <div className="relative h-[2px] w-20 overflow-hidden rounded-full bg-neutral-900">
+                <div className="relative h-[2px] w-20 overflow-hidden rounded-full bg-slate-200">
                   <motion.div
-                    className="h-full w-1/2 rounded-full bg-neutral-300"
+                    className="h-full w-1/2 rounded-full bg-slate-400"
                     initial={{ x: '-50%' }}
                     animate={{ x: '150%' }}
                     transition={{
@@ -179,21 +169,21 @@ export default function HomePage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-neutral-900/60 border border-neutral-800/50 px-3 py-1.5"
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 border border-slate-200 px-3 py-1.5"
               >
-                <div className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-pulse" />
-                <span className="text-[13px] font-medium text-neutral-300">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[13px] font-medium text-stone-900">
                   {successMessage}
                 </span>
               </motion.div>
             )}
 
             {error && (
-              <p className="mt-4 text-[13px] text-red-400">{error}</p>
+              <p className="mt-4 text-[13px] text-red-600">{error}</p>
             )}
 
             <div className="mt-5 flex items-center justify-between gap-4">
-              <span className="text-[13px] text-gray-500">
+              <span className="text-[13px] text-slate-600">
                 “内化” 会自动解析心智模型，并存入 Second Brain。
               </span>
               <motion.button
@@ -201,7 +191,7 @@ export default function HomePage() {
                 whileTap={{ scale: 0.97, y: 0 }}
                 onClick={handleSubmit}
                 disabled={isLoading || !content.trim()}
-                className="inline-flex flex-row items-center gap-2 rounded-full bg-neutral-100 text-black px-5 h-10 text-[15px] font-medium whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-white shrink-0"
+                className="inline-flex flex-row items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm px-5 h-10 text-[15px] font-medium whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
               >
                 <span className="whitespace-nowrap">
                   {isLoading ? '正在内化…' : '内化'}
@@ -214,22 +204,22 @@ export default function HomePage() {
           {/* 最近一条内化记录：作为 Context，无杂音 */}
           {isLoadingNotes && (
             <div className="flex justify-center py-8">
-              <div className="h-4 w-4 rounded-full border-2 border-neutral-600 border-t-neutral-300 animate-spin" />
+              <div className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" />
             </div>
           )}
 
-          {!isLoadingNotes && recentNotes.length > 0 && (
+          {!isLoadingNotes && notes.length > 0 && (
             <motion.section
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
               className="flex flex-col gap-2"
             >
-              <span className="text-[13px] text-gray-500">
+              <span className="text-[13px] text-slate-600">
                 最近的内化
               </span>
               <div className="flex flex-col gap-3">
-                {recentNotes.map((note) => (
+                {notes.map((note) => (
                   <NoteCard key={String(note.id)} note={note} />
                 ))}
               </div>
@@ -237,7 +227,7 @@ export default function HomePage() {
           )}
 
           {!isLoadingNotes && notes.length === 0 && (
-            <p className="text-[13px] text-gray-500 text-center py-4">
+            <p className="text-[13px] text-slate-600 text-center py-4">
               写下第一条想法，让 Second Brain 替你内化。
             </p>
           )}

@@ -63,12 +63,7 @@ export default function LoginPage() {
   }, [status, router]);
 
   return (
-    <div className="min-h-screen bg-black text-neutral-100 flex items-center justify-center relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 opacity-40">
-        <div className="absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.18),_transparent_60%)]" />
-        <div className="absolute bottom-[-120px] right-[-40px] h-80 w-80 rounded-full bg-[radial-gradient(circle_at_bottom,_rgba(255,255,255,0.08),_transparent_60%)]" />
-      </div>
-
+    <div className="min-h-screen text-slate-900 flex items-center justify-center relative overflow-hidden">
       <AnimatePresence mode="wait">
         {status === 'success' ? (
           <motion.div
@@ -87,8 +82,8 @@ export default function LoginPage() {
             >
               <CheckCircle className="h-14 w-14 text-emerald-500" />
             </motion.div>
-            <p className="text-sm font-medium text-neutral-100">登录成功</p>
-            <p className="text-xs text-neutral-500 mt-1">正在进入主页…</p>
+            <p className="text-sm font-medium text-slate-900">登录成功</p>
+            <p className="text-xs text-slate-500 mt-1">正在进入主页…</p>
           </motion.div>
         ) : (
           <motion.main
@@ -99,33 +94,33 @@ export default function LoginPage() {
             transition={{ duration: 0.4, ease: 'easeOut' }}
             className="relative z-10 w-full max-w-sm px-6"
           >
-        <div className="rounded-3xl border border-neutral-800/80 bg-gradient-to-b from-neutral-950/90 to-black/80 px-6 py-7 shadow-[0_24px_80px_rgba(15,23,42,0.85)] backdrop-blur-sm space-y-6">
+        <div className="rounded-2xl bg-white/70 backdrop-blur-xl border border-white/40 px-6 py-7 shadow-[0_8px_30px_rgba(247,235,225,0.8)] space-y-6">
           <div className="space-y-2">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-neutral-500">
+            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-slate-500">
               Second Brain
             </p>
-            <h1 className="text-base font-semibold text-neutral-50">
+            <h1 className="text-base font-semibold text-slate-800">
               密码登录
             </h1>
-            <p className="text-xs text-neutral-500 leading-relaxed">
+            <p className="text-xs text-slate-500 leading-relaxed">
               使用邮箱和密码登录，登录状态将保持。
             </p>
-            <p className="text-[11px] text-amber-500/90 leading-relaxed">
+            <p className="text-[11px] text-amber-600 leading-relaxed">
               首次使用？请先到注册邮箱中点击确认链接完成验证后再登录。
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[11px] text-neutral-400">邮箱</label>
-              <div className="relative rounded-xl border border-neutral-800/80 bg-neutral-950/60 px-3 py-2.5 flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+              <label className="text-[11px] text-slate-500">邮箱</label>
+              <div className="relative rounded-xl border border-stone-200 bg-[#fcfaf5] px-3 py-2.5 flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="flex-1 bg-transparent text-xs text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
+                  className="flex-1 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
                   autoComplete="email"
                   required
                 />
@@ -133,15 +128,15 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] text-neutral-400">密码</label>
-              <div className="relative rounded-xl border border-neutral-800/80 bg-neutral-950/60 px-3 py-2.5 flex items-center gap-2">
-                <Lock className="h-3.5 w-3.5 text-neutral-500 shrink-0" />
+              <label className="text-[11px] text-slate-500">密码</label>
+              <div className="relative rounded-xl border border-stone-200 bg-[#fcfaf5] px-3 py-2.5 flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="flex-1 bg-transparent text-xs text-neutral-100 placeholder:text-neutral-600 focus:outline-none"
+                  className="flex-1 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
                   autoComplete="current-password"
                   required
                 />
@@ -153,25 +148,25 @@ export default function LoginPage() {
               whileHover={{ scale: 1.02, y: -1 }}
               whileTap={{ scale: 0.97, y: 0 }}
               disabled={status === 'loading'}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-neutral-100 text-black py-2 text-xs font-medium tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-colors hover:bg-white"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 text-xs font-medium tracking-wide disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <span>{status === 'loading' ? '登录中…' : '登录'}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </motion.button>
           </form>
 
-          <p className="text-[11px] text-neutral-500 text-center">
+          <p className="text-[11px] text-slate-500 text-center">
             还没有账号？{' '}
             <Link
               href="/signup"
-              className="text-neutral-300 hover:text-neutral-100 underline underline-offset-2"
+              className="text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
             >
               去注册
             </Link>
           </p>
 
           {error && (
-            <p className="text-[11px] text-red-400">
+            <p className="text-[11px] text-red-600">
               {error}
             </p>
           )}

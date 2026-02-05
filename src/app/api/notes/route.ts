@@ -78,10 +78,11 @@ export async function POST(request: Request) {
   }
 }
 
+const ITEMS_PER_PAGE = 10;
+
 // 获取笔记列表
-// - 默认：返回最近 5 条（用于首页轻量展示）
-// - 可通过 ?limit=100 调整数量（用于 /brain 等整理视图）
-// - 仅返回当前登录用户的笔记
+// - ?page=1 分页模式：每页 10 条，返回 notes + totalCount（首页用）
+// - ?limit=N 兼容模式：返回最多 N 条，无 totalCount（/brain 等用）
 export async function GET(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -92,15 +93,44 @@ export async function GET(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: '请先登录', notes: [] },
+        { error: '请先登录', notes: [], totalCount: 0 },
         { status: 401 },
       );
     }
 
     const { searchParams } = new URL(request.url);
+    const pageParam = searchParams.get('page');
     const limitParam = searchParams.get('limit');
+    const usePagination = searchParams.has('page') || !searchParams.has('limit');
+
+    if (usePagination) {
+      const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : Number.NaN;
+      const page = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1;
+      const start = (page - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE - 1;
+
+      const { data, error, count } = await supabaseAdmin
+        .from('notes')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(start, end);
+
+      if (error) {
+        console.error('Supabase list notes error:', error);
+        return NextResponse.json(
+          { error: 'Failed to load notes' },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({
+        notes: data ?? [],
+        totalCount: count ?? 0,
+      });
+    }
+
     const parsed = limitParam ? Number.parseInt(limitParam, 10) : Number.NaN;
-    const limit = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 500) : 5;
+    const limit = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 500) : 100;
 
     const { data, error } = await supabaseAdmin
       .from('notes')
@@ -116,7 +146,6 @@ export async function GET(request: Request) {
         { status: 500 },
       );
     }
-
     return NextResponse.json({ notes: data ?? [] });
   } catch (error) {
     console.error('GET /api/notes error:', error);

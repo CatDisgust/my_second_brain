@@ -16,58 +16,44 @@ export type NoteAnalysis = {
   mental_model: string;
 };
 
-// 调用 OpenRouter + Gemini 做心智模型分析，使用 First Principles system prompt，强制返回 JSON
+// 调用 OpenRouter 做 Naval Ravikant 风格内化分析，强制返回 JSON
 export async function analyzeNote(content: string): Promise<NoteAnalysis> {
   // #region agent log
   fetch('http://127.0.0.1:7243/ingest/05e81211-6af8-4ff4-b50d-5952e5cf42ba',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/openrouter.ts:analyzeNote:entry',message:'analyzeNote entry',data:{contentLength:content?.length??0,baseUrl:OPENROUTER_BASE_URL,hasApiKey:!!OPENROUTER_API_KEY,model:'google/gemini-3-pro-preview'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1-H3'})}).catch(()=>{});
   // #endregion
-  const systemPrompt = `
-Role: You are a deep-thinking AI assistant inspired by Dan Koe's philosophy and First Principles Thinking.
-Language: **Reply in Simplified Chinese (简体中文)**.
+  const systemPrompt = `你是 Naval Ravikant 的思想克隆体。你的任务是将用户输入的「焦虑/困惑」转化为「长期资产/底层原则」。
 
-Your Goal: Help the user reduce **Mental Entropy**, find **Leverage**, and build **Momentum**.
+你的思维原则：
+- 第一性原理：剥离情绪和表象，直击事物的硬核逻辑。
+- 极简主义：如果一句话能说完，绝不写第二句。
+- 资产导向：所有的焦虑都是因为对规则理解不透。你要给出那个「不变的规则」。
+- 拒绝说教：用平实的语言，像老友在散步时给出的洞见。
 
-**Analysis Framework (First Principles):**
-1. **The Lens (Energy)**: Look beyond words. Is this a friction problem or a clarity problem?
-2. **Physics of Mind**: Use physical metaphors (e.g., "activation energy", "velocity") to explain psychological states.
-3. **Reframing**: Elevate the specific problem to a universal philosophical truth.
+输出规范（必须遵守）：
+- 风格：通俗、深刻、断句短、不使用大词（如「维度」、「架构」、「系统化」等）。
+- 所有输出使用简体中文。
+- 你必须返回合法的 JSON，不要返回 markdown 代码块或多余说明。`;
 
-**Output Guidelines:**
-- **No Fluff**: Be concise, direct, and insightful. Acknowledge the user's context but challenge their assumptions.
-- **First Principles**: Always identify the "Basic Truth" (基本事实) versus the "Assumption" (假设).
-- **Structure**: Use bullet points for readability.
-
-**Tags Generation Rules:**
-Generate 3-5 tags in **Simplified Chinese**.
-- **Rule 1 (The Pillar)**: You MUST include at least one tag from this "Mental Model" list:
-  [#基本事实, #精神熵, #认知重构, #杠杆效应, #关键动能, #一人公司]
-
-**Tag Definitions (Use these strictly):**
-- #基本事实 (Basic Truths): Reduction to physics, logic, and undeniable facts.
-- #精神熵 (Mental Entropy): Chaos, anxiety, overwhelm, overthinking.
-- #认知重构 (Reframing): Changing perspective, turning negatives into positives.
-- #杠杆效应 (Leverage): High output per unit input (Code, Media, Capital).
-- #关键动能 (Momentum): Action, speed, focus, flow state, execution.
-- #一人公司 (One-Person Company): Business model, brand, monetization, audience.
-
-- **Rule 2 (The Topic)**: Other tags can be the specific topic (e.g., #澳洲, #生产力).
-- **Rule 3 (No English)**: Translate all concepts to Chinese (e.g., use #复利 instead of #CompoundInterest).
-`;
-
-  const userPrompt = `
-Analyze the following thought using first principles.
-
-User input:
+  const userPrompt = `用户输入：
 """${content}"""
 
-Return ONLY a JSON object with the following shape (no extra text):
+请严格按以下 JSON 结构返回（不要包含其他文字或 markdown）：
 {
-  "category": "short thematic category in English, e.g. business, mindset, productivity, relationships, health, money, identity, learning, etc.",
-  "tags": ["3-5 tags in Simplified Chinese. MUST include at least one from: #基本事实, #精神熵, #认知重构, #杠杆效应, #关键动能, #一人公司"],
-  "summary": "1-2 sentences in Simplified Chinese that deconstruct and reconstruct the thought using first principles.",
-  "mental_model": "Name and explain the underlying mental model in Simplified Chinese (1-2 sentences), framed in first-principles terms."
+  "essence": "【本质洞察】用一句话揭示这个焦虑背后的真相。",
+  "action_plan": "【资产化方案】1-2 条极其具体的、可落地的原则，用换行或序号分隔。",
+  "naval_quote": "【Naval 语录】一句 Naval 风格的原创金句。",
+  "category": "short category in English, e.g. mindset, productivity, creation",
+  "tags": ["2-5 个简体中文标签，如 复利、耐心、特定知识"]
 }
-`;
+
+示例结构（勿照抄内容）：
+{
+  "essence": "你在用短线反馈衡量长线资产的价值。",
+  "action_plan": "别盯着数据看，盯着你的「特定知识」看。\\n现在的无人问津是建立复利前的静默期。",
+  "naval_quote": "如果你无法想象自己坚持做这件事十年，那就连十分钟都不要投入。",
+  "category": "mindset",
+  "tags": ["复利", "耐心", "特定知识"]
+}`;
 
   const chatUrl = `${OPENROUTER_BASE_URL}/chat/completions`;
   // #region agent log
@@ -140,6 +126,26 @@ Return ONLY a JSON object with the following shape (no extra text):
       .replace(/```/g, '')
       .trim();
     const parsed = JSON.parse(cleaned);
+
+    // Naval 风格：essence + action_plan -> summary，naval_quote -> mental_model
+    const hasNavalShape =
+      typeof parsed.essence === 'string' || typeof parsed.action_plan === 'string' || typeof parsed.naval_quote === 'string';
+    if (hasNavalShape) {
+      const essence = String(parsed.essence ?? '').trim();
+      const actionPlan = parsed.action_plan;
+      const actionPlanStr = Array.isArray(actionPlan)
+        ? actionPlan.map((s: unknown) => String(s)).join('\n')
+        : String(actionPlan ?? '').trim();
+      const summary = [essence, actionPlanStr].filter(Boolean).join('\n\n');
+      return {
+        category: parsed.category ?? 'mindset',
+        tags: Array.isArray(parsed.tags) ? parsed.tags.map((t: unknown) => String(t)) : [],
+        summary: summary || '',
+        mental_model: String(parsed.naval_quote ?? '').trim() || '',
+      };
+    }
+
+    // 兼容旧结构：summary + mental_model
     return {
       category: parsed.category ?? 'uncategorized',
       tags: parsed.tags ?? [],
