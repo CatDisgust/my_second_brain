@@ -163,6 +163,11 @@ export default function BrainPage() {
   const [activeModel, setActiveModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handleDeleteNote = async (id: string | number) => {
     setDeletingId(id);
@@ -319,7 +324,7 @@ export default function BrainPage() {
                 placeholder="在整个第二大脑中进行语义检索…"
                 className="w-full rounded-full bg-[#fcfaf5] border border-stone-200 pl-9 pr-24 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-stone-400 focus:ring-0 transition-colors shadow-sm"
               />
-              {isVoiceSupported && (
+              {hasMounted && isVoiceSupported && (
                 <button
                   type="button"
                   onClick={() => {

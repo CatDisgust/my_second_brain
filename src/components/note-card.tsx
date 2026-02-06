@@ -1,5 +1,24 @@
 import * as React from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Trash2 } from 'lucide-react';
+
+const markdownComponents = {
+  h3: ({ node, ...props }: React.ComponentPropsWithoutRef<'h3'>) => (
+    <h3 className="font-bold text-lg mb-2 mt-4 text-slate-800 first:mt-0" {...props} />
+  ),
+  p: ({ node, ...props }: React.ComponentPropsWithoutRef<'p'>) => (
+    <p className="mb-4 leading-relaxed text-slate-700 last:mb-0" {...props} />
+  ),
+  ul: ({ node, ...props }: React.ComponentPropsWithoutRef<'ul'>) => (
+    <ul className="list-disc pl-5 mb-4 space-y-2" {...props} />
+  ),
+  li: ({ node, ...props }: React.ComponentPropsWithoutRef<'li'>) => (
+    <li className="text-slate-700" {...props} />
+  ),
+  hr: ({ node, ...props }: React.ComponentPropsWithoutRef<'hr'>) => (
+    <hr className="my-6 border-stone-200" {...props} />
+  ),
+};
 
 export type Note = {
   id: string | number;
@@ -76,16 +95,22 @@ export function NoteCard({ note, onDelete, deleting }: NoteCardProps) {
       </p>
 
       {note.summary && (
-        <p className="text-slate-700 text-[15px] leading-7 ml-0 pl-0 mb-4">
-          {note.summary}
-        </p>
+        <div className="text-[15px] leading-7 ml-0 pl-0 mb-4 [&_h3]:first:mt-0">
+          <ReactMarkdown components={markdownComponents}>
+            {note.summary}
+          </ReactMarkdown>
+        </div>
       )}
 
       {note.mental_model && (
-        <p className="mt-0 mb-4 text-[15px] leading-7 ml-0 pl-0">
+        <div className="mt-0 mb-4 text-[15px] leading-7 ml-0 pl-0">
           <span className="font-bold text-indigo-600 mr-2">心智模型：</span>
-          <span className="text-slate-700">{note.mental_model}</span>
-        </p>
+          <div className="text-slate-700 mt-1">
+            <ReactMarkdown components={markdownComponents}>
+              {note.mental_model}
+            </ReactMarkdown>
+          </div>
+        </div>
       )}
 
       <footer className="flex justify-between items-center gap-4 mt-6 flex-wrap ml-0 pl-0">
